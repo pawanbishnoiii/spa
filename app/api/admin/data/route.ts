@@ -5,7 +5,7 @@ import { requireAdminApi } from "@/lib/admin-auth";
 
 const settingKeys = [
   "price_calm_30","price_calm_60","price_calm_90","price_deep_60","price_deep_90","price_aroma_60","price_aroma_90",
-  "package_hour_1","package_hour_2","package_hour_3","package_hour_4","package_full_day","package_full_night","image_calm","image_deep","image_aroma","city","hero_title","hero_intro","site_name","registration_fee","business_phone","telegram_username","telegram_cta_en","opening_hours","address","meta_pixel_id","adsense_client_id",
+  "package_hour_1","package_hour_2","package_hour_3","package_hour_4","package_full_day","package_full_night","image_calm","image_deep","image_aroma","city","hero_title","hero_intro","collect_user_details","site_name","registration_fee","business_phone","telegram_username","telegram_cta_en","opening_hours","address","meta_pixel_id","adsense_client_id",
 ] as const;
 const updateSchema = z.object({
   settings: z.record(z.enum(settingKeys), z.string().trim().max(500)).optional(),

@@ -10,7 +10,7 @@ const schema = z.object({
   age: z.coerce.number().int().min(18).max(100),
   service: z.enum(["calm", "deep", "aroma"]),
   therapist: z.string().trim().max(80).optional(),
-  consent: z.literal(true), marketing: z.boolean().default(false),
+  marketing: z.boolean().default(false),
   website: z.string().max(0), idempotencyKey: z.string().uuid(),
 });
 

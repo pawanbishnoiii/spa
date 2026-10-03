@@ -59,6 +59,7 @@ function telegramHref(value: string) {
   return `https://t.me/${clean || "[TELEGRAM_USERNAME]"}`;
 }
 
+let collectUserDetails=true;
 function TelegramLink({
   href,
   label,
@@ -79,7 +80,7 @@ function TelegramLink({
       data-track="telegram_click"
       data-service={service}
       data-button={className.includes("hero-now")?"hero_chat_now":className.includes("hero")?"hero_telegram":className.includes("floating")?"floating_telegram":service?`service_${service}`:className.replaceAll(" ","_")}
-      onClick={(event)=>{event.preventDefault();window.dispatchEvent(new CustomEvent("open-spa-lead",{detail:{href,label,service:service||"calm",buttonId:event.currentTarget.dataset.button}}))}}
+      onClick={(event)=>{if(!collectUserDetails)return;event.preventDefault();window.dispatchEvent(new CustomEvent("open-spa-lead",{detail:{href,label,service:service||"calm",buttonId:event.currentTarget.dataset.button}}))}}
       aria-label={`${label} — opens Telegram in a new tab`}
     >
       <MessageCircle />
@@ -137,6 +138,7 @@ export default function SpaExperience({ route }: { route: string }) {
   );
 
   const to = (path: string) => `/en/${path}`;
+  collectUserDetails=runtime.settings.collect_user_details!=="off";
   const siteName = (runtime.settings.site_name || business.name).slice(0, 80);
   const telegram = runtime.settings.telegram_username || business.telegram;
   const telegramUrl = telegramHref(telegram);
@@ -260,7 +262,7 @@ function Home({
   return (
     <main>
       <section className="hero">
-        <Image src="/images/hero-spa.webp" alt="Serene green and copper spa interior" fill priority sizes="100vw" />
+        <Image src="/images/real-smile.jpg" alt="Smiling adult woman enjoying a spa visit with a towel wrap" fill priority sizes="100vw" />
         <div className="hero-shade" />
         <div className="hero-orbit" aria-hidden="true"><LottieLight src="/breathe.json" autoplay={!reducedMotion} loop={!reducedMotion} /></div>
         <div className="hero-motes" aria-hidden="true"><i /><i /><i /></div>
