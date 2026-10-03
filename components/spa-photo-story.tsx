@@ -67,21 +67,24 @@ export default function SpaPhotoStory() {
           scrollTrigger: {
             trigger: section.current,
             start: "top top",
-            end: () => `+=${distance() + window.innerHeight * 0.85}`,
+            end: () =>
+              `+=${Math.max(distance() + window.innerHeight * 0.28, window.innerHeight * 1.2)}`,
             pin: pin.current,
             pinSpacing: true,
-            scrub: 0.7,
+            scrub: 0.5,
             invalidateOnRefresh: true,
             anticipatePin: 1,
           },
         });
         timeline
-          .to(track.current, { x: () => -distance(), ease: "none" }, 0)
-          .to(".spa-story-progress i", { scaleX: 1, ease: "none" }, 0)
-          .fromTo(
-            ".spa-photo-strip figure",
-            { scale: 0.96, rotate: -0.5 },
-            { scale: 1, rotate: 0, stagger: 0.18, ease: "none" },
+          .to(
+            track.current,
+            { x: () => -distance(), duration: 1, ease: "none" },
+            0,
+          )
+          .to(
+            ".spa-story-progress i",
+            { scaleX: 1, duration: 1, ease: "none" },
             0,
           );
 
