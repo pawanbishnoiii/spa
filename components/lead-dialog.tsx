@@ -1,8 +1,155 @@
 "use client";
-import {useRef,useState} from "react";
-import {Dialog,DialogContent,DialogTitle,DialogDescription} from "@/components/ui/dialog";
-export default function LeadDialog({lead,therapists,close}:{lead:{href:string;label:string;service:string;buttonId:string;therapist?:string};therapists:Array<Record<string,string|number|null>>;close:()=>void}){
- const [pending,setPending]=useState(false),[error,setError]=useState(""),[saved,setSaved]=useState(false);const key=useRef(crypto.randomUUID());
- async function submit(event:React.FormEvent<HTMLFormElement>){event.preventDefault();setPending(true);setError("");const values=Object.fromEntries(new FormData(event.currentTarget));try{const response=await fetch("/api/enquiry",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...values,age:Number(values.age),service:lead.service,buttonId:lead.buttonId,website:"",idempotencyKey:key.current})});const body=await response.json();if(!response.ok)throw new Error(body.error||"Unable to save. Please try again.");setSaved(true);window.dispatchEvent(new CustomEvent("spa-analytics",{detail:{name:"enquiry_success",buttonId:lead.buttonId}}));window.location.assign(lead.href)}catch(e){setError(e instanceof Error?e.message:"Please try again.")}finally{setPending(false)}}
- return <Dialog open onOpenChange={open=>!open&&close()}><DialogContent className="lead-dialog"><DialogTitle>Your details</DialogTitle><DialogDescription>Continue to save your details for this enquiry and open Telegram.</DialogDescription>{saved?<a className="btn btn-telegram" href={lead.href}>Continue to Telegram</a>:<form onSubmit={submit}><div className="form-grid"><label>First name<input autoFocus name="firstName" required minLength={2} maxLength={40} autoComplete="given-name"/></label><label>Last name<input name="lastName" required maxLength={40} autoComplete="family-name"/></label><label>Age<input name="age" type="number" min={18} max={100} required inputMode="numeric"/></label><label>Gender<select name="gender" required defaultValue=""><option value="" disabled>Select gender</option><option value="female">Female</option><option value="male">Male</option><option value="nonbinary">Non-binary</option><option value="prefer-not">Prefer not to say</option></select></label><label>Phone number <small>(optional)</small><input name="phone" type="tel" autoComplete="tel" maxLength={20} pattern="[+0-9 ()-]{7,20}" placeholder="+91"/></label><label>Therapist preference<select name="therapist" defaultValue={lead.therapist||""}><option value="">Help me choose</option>{therapists.map(t=><option key={String(t.id)} value={String(t.name_en)}>{String(t.name_en)}</option>)}</select></label></div>{error&&<p role="alert" className="error">{error}</p>}<button className="btn btn-telegram" disabled={pending}>{pending?"Saving…":"Continue to Telegram"}</button></form>}</DialogContent></Dialog>
+import { useRef, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+export default function LeadDialog({
+  lead,
+  therapists,
+  close,
+}: {
+  lead: {
+    href: string;
+    label: string;
+    service: string;
+    buttonId: string;
+    therapist?: string;
+  };
+  therapists: Array<Record<string, string | number | null>>;
+  close: () => void;
+}) {
+  const [pending, setPending] = useState(false),
+    [error, setError] = useState(""),
+    [saved, setSaved] = useState(false);
+  const key = useRef(crypto.randomUUID());
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setError("");
+    const values = Object.fromEntries(new FormData(event.currentTarget));
+    try {
+      const response = await fetch("/api/enquiry", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          ...values,
+          age: Number(values.age),
+          service: lead.service,
+          buttonId: lead.buttonId,
+          website: "",
+          idempotencyKey: key.current,
+        }),
+      });
+      const body = (await response.json()) as { error?: string };
+      if (!response.ok)
+        throw new Error(body.error || "Unable to save. Please try again.");
+      setSaved(true);
+      window.dispatchEvent(
+        new CustomEvent("spa-analytics", {
+          detail: { name: "enquiry_success", buttonId: lead.buttonId },
+        }),
+      );
+      window.location.assign(lead.href);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Please try again.");
+    } finally {
+      setPending(false);
+    }
+  }
+  return (
+    <Dialog open onOpenChange={(open) => !open && close()}>
+      <DialogContent className="lead-dialog">
+        <DialogTitle>Your details</DialogTitle>
+        <DialogDescription>
+          Continue to save your details for this enquiry and open Telegram.
+        </DialogDescription>
+        {saved ? (
+          <a className="btn btn-telegram" href={lead.href}>
+            Continue to Telegram
+          </a>
+        ) : (
+          <form onSubmit={submit}>
+            <div className="form-grid">
+              <label>
+                First name
+                <input
+                  autoFocus
+                  name="firstName"
+                  required
+                  minLength={2}
+                  maxLength={40}
+                  autoComplete="given-name"
+                />
+              </label>
+              <label>
+                Last name
+                <input
+                  name="lastName"
+                  required
+                  maxLength={40}
+                  autoComplete="family-name"
+                />
+              </label>
+              <label>
+                Age
+                <input
+                  name="age"
+                  type="number"
+                  min={18}
+                  max={100}
+                  required
+                  inputMode="numeric"
+                />
+              </label>
+              <label>
+                Gender
+                <select name="gender" required defaultValue="">
+                  <option value="" disabled>
+                    Select gender
+                  </option>
+                  <option value="female">Female</option>
+                  <option value="male">Male</option>
+                  <option value="nonbinary">Non-binary</option>
+                  <option value="prefer-not">Prefer not to say</option>
+                </select>
+              </label>
+              <label>
+                Phone number <small>(optional)</small>
+                <input
+                  name="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  maxLength={20}
+                  pattern="[+0-9 ()-]{7,20}"
+                  placeholder="+91"
+                />
+              </label>
+              <label>
+                Therapist preference
+                <select name="therapist" defaultValue={lead.therapist || ""}>
+                  <option value="">Help me choose</option>
+                  {therapists.map((t) => (
+                    <option key={String(t.id)} value={String(t.name_en)}>
+                      {String(t.name_en)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            {error && (
+              <p role="alert" className="error">
+                {error}
+              </p>
+            )}
+            <button className="btn btn-telegram" disabled={pending}>
+              {pending ? "Saving…" : "Continue to Telegram"}
+            </button>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
 }

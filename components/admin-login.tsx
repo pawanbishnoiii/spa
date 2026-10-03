@@ -1,4 +1,64 @@
 "use client";
-import {useState} from "react";
-import {LockKeyhole} from "lucide-react";
-export default function AdminLogin(){const [error,setError]=useState(""),[busy,setBusy]=useState(false);async function submit(e:React.FormEvent<HTMLFormElement>){e.preventDefault();setBusy(true);setError("");try{const response=await fetch("/api/admin/login",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(Object.fromEntries(new FormData(e.currentTarget)))});const data=await response.json();if(!response.ok)throw Error(data.error);location.assign("/admin")}catch(e){setError(e instanceof Error?e.message:"Try again");setBusy(false)}}return <main className="password-admin-gate"><form onSubmit={submit}><span className="admin-gate-icon"><LockKeyhole/></span><small>SPA ADMINISTRATION</small><h1>Welcome back.</h1><label>Email<input name="email" type="email" defaultValue="admin@admin.com" autoComplete="username" required/></label><label>Password<input name="password" type="password" autoComplete="current-password" required/></label>{error&&<p role="alert" className="error">{error}</p>}<button className="btn btn-telegram" disabled={busy}>{busy?"Signing in…":"Sign in"}</button><a href="/">Back to website</a></form></main>}
+import { useState } from "react";
+import { LockKeyhole } from "lucide-react";
+export default function AdminLogin() {
+  const [error, setError] = useState(""),
+    [busy, setBusy] = useState(false);
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(Object.fromEntries(new FormData(e.currentTarget))),
+      });
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) throw Error(data.error || "Unable to sign in");
+      location.assign("/admin");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Try again");
+      setBusy(false);
+    }
+  }
+  return (
+    <main className="password-admin-gate">
+      <form onSubmit={submit}>
+        <span className="admin-gate-icon">
+          <LockKeyhole />
+        </span>
+        <small>SPA ADMINISTRATION</small>
+        <h1>Welcome back.</h1>
+        <label>
+          Email
+          <input
+            name="email"
+            type="email"
+            defaultValue="admin@admin.com"
+            autoComplete="username"
+            required
+          />
+        </label>
+        <label>
+          Password
+          <input
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+          />
+        </label>
+        {error && (
+          <p role="alert" className="error">
+            {error}
+          </p>
+        )}
+        <button className="btn btn-telegram" disabled={busy}>
+          {busy ? "Signing in…" : "Sign in"}
+        </button>
+        <a href="/">Back to website</a>
+      </form>
+    </main>
+  );
+}

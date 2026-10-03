@@ -1,4 +1,61 @@
-import {env} from "cloudflare:workers";
-import {NextResponse} from "next/server";
-import {makeAdminSession,verifyPassword} from "@/lib/password-admin";
-export async function POST(request:Request){if(request.headers.get("origin")!==new URL(request.url).origin)return NextResponse.json({error:"Invalid request"},{status:403});const data=await request.json().catch(()=>null);if(!data||typeof data.password!=="string"||data.password.length>200||!env.DB)return NextResponse.json({error:"Unable to sign in"},{status:400});const now=Math.floor(Date.now()/1000);const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(`admin-login:${request.headers.get("cf-connecting-ip")||"local"}:${Math.floor(now/900)}`));const id=[...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,"0")).join("");const current=await env.DB.prepare("SELECT count FROM enquiry_rate_limits WHERE fingerprint = ?").bind(id).first<{count:number}>();if((current?.count||0)>=10)return NextResponse.json({error:"Try again in 15 minutes"},{status:429});await env.DB.prepare("INSERT INTO enquiry_rate_limits (fingerprint,count,window_start) VALUES (?,1,?) ON CONFLICT(fingerprint) DO UPDATE SET count=count+1").bind(id,now).run();const config=env as unknown as Record<string,string>;if(data.email!==config.ADMIN_LOGIN_EMAIL||!await verifyPassword(data.password))return NextResponse.json({error:"Email or password is incorrect"},{status:401});const response=NextResponse.json({ok:true});response.cookies.set("spa-admin",await makeAdminSession(),{httpOnly:true,secure:true,sameSite:"strict",path:"/",maxAge:8*3600});return response}
+import { env } from "cloudflare:workers";
+import { NextResponse } from "next/server";
+import { makeAdminSession, verifyPassword } from "@/lib/password-admin";
+
+type LoginBody = { email?: string; password?: string };
+
+export async function POST(request: Request) {
+  if (request.headers.get("origin") !== new URL(request.url).origin)
+    return NextResponse.json({ error: "Invalid request" }, { status: 403 });
+  const data = (await request.json().catch(() => null)) as LoginBody | null;
+  if (
+    !data ||
+    typeof data.password !== "string" ||
+    data.password.length > 200 ||
+    !env.DB
+  )
+    return NextResponse.json({ error: "Unable to sign in" }, { status: 400 });
+  const now = Math.floor(Date.now() / 1000);
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(
+      `admin-login:${request.headers.get("cf-connecting-ip") || "local"}:${Math.floor(now / 900)}`,
+    ),
+  );
+  const id = [...new Uint8Array(digest)]
+    .map((x) => x.toString(16).padStart(2, "0"))
+    .join("");
+  const current = await env.DB.prepare(
+    "SELECT count FROM enquiry_rate_limits WHERE fingerprint = ?",
+  )
+    .bind(id)
+    .first<{ count: number }>();
+  if ((current?.count || 0) >= 10)
+    return NextResponse.json(
+      { error: "Try again in 15 minutes" },
+      { status: 429 },
+    );
+  await env.DB.prepare(
+    "INSERT INTO enquiry_rate_limits (fingerprint,count,window_start) VALUES (?,1,?) ON CONFLICT(fingerprint) DO UPDATE SET count=count+1",
+  )
+    .bind(id, now)
+    .run();
+  const config = env as unknown as Record<string, string>;
+  if (
+    data.email !== config.ADMIN_LOGIN_EMAIL ||
+    !(await verifyPassword(data.password))
+  )
+    return NextResponse.json(
+      { error: "Email or password is incorrect" },
+      { status: 401 },
+    );
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set("spa-admin", await makeAdminSession(), {
+    httpOnly: true,
+    secure: true,
+    sameSite: "strict",
+    path: "/",
+    maxAge: 8 * 3600,
+  });
+  return response;
+}
