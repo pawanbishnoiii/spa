@@ -217,3 +217,13 @@ footer{padding-bottom:45px}.footer-note{margin-bottom:0}
 @media(prefers-reduced-motion:reduce){.team-editor>article,.team-photo img,.hero>img{transition:none;animation:none}.spa-photo-strip{transform:none!important}}
 .profile-studio-stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.profile-studio-stats span{display:flex;align-items:baseline;gap:6px;background:#edf4ef;border:1px solid #d3e2d9;padding:10px 14px;border-radius:14px;color:#536a60;font-size:13px}.profile-studio-stats b{font:26px var(--font-display);color:#07483d}.team-editor>article{display:grid;grid-template-columns:260px 1fr;gap:28px}.team-editor>article>.profile-admin-heading{grid-column:1/-1}.team-editor>article>.profile-media-manager{grid-column:1/-1}
 @media(max-width:760px){.team-editor>article{grid-template-columns:1fr}.team-editor>article>.profile-admin-heading,.team-editor>article>.profile-media-manager{grid-column:auto}.profile-studio-stats{display:grid;grid-template-columns:1fr 1fr}.profile-studio-stats span:last-child{grid-column:1/-1}}
+
+/* v13 — cleaner navigation, stronger scroll motion, no location chrome */
+.nav{justify-content:space-between}.nav-links{margin:0}.nav-actions,.nav-location,.footer-location{display:none!important}
+.hero>img{transform:translate3d(0,var(--hero-shift,0),0) scale(1.035);transition:transform .12s linear}.hero-copy{transform:translate3d(0,var(--hero-copy-shift,0),0)}
+.scroll-reveal{opacity:0;transform:translateY(34px) scale(.985);filter:blur(5px);transition:opacity .72s ease,transform .86s cubic-bezier(.16,1,.3,1),filter .72s ease;transition-delay:var(--reveal-delay,0ms)}.scroll-reveal.in-view{opacity:1;transform:none;filter:none}
+.spa-story-viewport{overflow:hidden}.spa-photo-strip{backface-visibility:hidden;transform:translateZ(0)}
+@media(max-width:680px){
+ .nav-wrap{display:none!important}.hero{padding-top:430px}.hero>img{height:450px!important}.hero-shade{height:462px}.hero-photo-caption{top:350px}.inner{padding-top:34px!important}.page-intro{padding-top:32px}
+ .spa-photo-story{height:100svh;min-height:680px;max-width:100vw;contain:layout paint}.spa-story-viewport{width:100%;overscroll-behavior-x:none}.spa-photo-strip{touch-action:pan-y}.spa-photo-strip figure{flex-basis:min(78vw,340px);width:min(78vw,340px)}
+}

@@ -110,7 +110,7 @@ export async function GET() {
       .bind(Math.floor(Date.now() / 1000))
       .all(),
     env.DB.prepare(
-      "SELECT id, visitor_hash, source, medium, campaign, device, country, landing_path, page_count, duration_seconds, first_seen, last_seen FROM analytics_sessions WHERE last_seen >= ? ORDER BY last_seen DESC LIMIT 200",
+      "SELECT id, visitor_hash, source, medium, campaign, device, landing_path, page_count, duration_seconds, first_seen, last_seen FROM analytics_sessions WHERE last_seen >= ? ORDER BY last_seen DESC LIMIT 200",
     )
       .bind(since)
       .all(),

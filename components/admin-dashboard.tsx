@@ -66,7 +66,6 @@ const priceFields = [
 ];
 const businessFields = [
   ["hero_image", "Hero image URL"],
-  ["city", "City / state"],
   ["hero_title", "Hero heading"],
   ["hero_intro", "Hero description"],
   ["image_calm", "Quiet Flow image URL"],
@@ -78,7 +77,6 @@ const businessFields = [
   ["telegram_username", "Telegram username or URL"],
   ["telegram_cta_en", "Telegram button label"],
   ["opening_hours", "Opening hours"],
-  ["address", "Address"],
   ["meta_pixel_id", "Meta Pixel ID"],
   ["adsense_client_id", "AdSense client ID"],
 ];
@@ -108,8 +106,6 @@ export default function AdminDashboard({
       site_name: "Quiet Ritual Spa",
       telegram_username: "SpaYakshini1",
       telegram_cta_en: "Chat on Telegram",
-      address: "Gopalpura Mode",
-      city: "Jaipur, Rajasthan",
       registration_fee: "₹199",
       package_hour_1: "₹1,700",
       package_hour_2: "₹2,000",
@@ -233,8 +229,7 @@ export default function AdminDashboard({
       return;
     }
     const imageUrl = json.imageUrl;
-    if (kind === "hero")
-      setSettings((v) => ({ ...v, hero_image: imageUrl }));
+    if (kind === "hero") setSettings((v) => ({ ...v, hero_image: imageUrl }));
     else
       setTherapists((v) =>
         v.map((t) =>
@@ -242,10 +237,7 @@ export default function AdminDashboard({
             ? kind === "gallery"
               ? {
                   ...t,
-                  photos: [
-                    ...(t.photos || []),
-                    { id: json.id, url: imageUrl },
-                  ],
+                  photos: [...(t.photos || []), { id: json.id, url: imageUrl }],
                 }
               : { ...t, imageUrl }
             : t,
@@ -579,7 +571,7 @@ export default function AdminDashboard({
                   </label>
                 ))}
                 {businessFields.map(([key, label]) => (
-                  <label className={key === "address" ? "wide" : ""} key={key}>
+                  <label key={key}>
                     <span>{label}</span>
                     <input
                       value={settings[key] ?? ""}
@@ -843,7 +835,6 @@ export default function AdminDashboard({
                   "medium",
                   "campaign",
                   "device",
-                  "country",
                   "landing_path",
                   "page_count",
                   "duration_seconds",

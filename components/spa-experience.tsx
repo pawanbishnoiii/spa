@@ -9,7 +9,6 @@ import {
   Check,
   Clock3,
   Leaf,
-  MapPin,
   MessageCircle,
   Send,
   ShieldCheck,
@@ -25,7 +24,6 @@ import {
 import AnalyticsTracker from "@/components/analytics-tracker";
 import LeadDialog from "@/components/lead-dialog";
 import SpaPhotoStory from "@/components/spa-photo-story";
-import RiveMascot from "@/components/rive-mascot";
 import ProfileGallery from "@/components/profile-gallery";
 import { RitualIcon } from "@/components/ritual-icons";
 import { business, services, therapists } from "@/lib/spa-config";
@@ -51,6 +49,15 @@ const content = {
   gallery: "Inside the quiet",
   faq: "Good to know",
 } as const;
+
+const profileFallbacks = [
+  "/images/portrait-1.jpg",
+  "/images/portrait-2.jpg",
+  "/images/portrait-3.jpg",
+  "/images/real-smile.jpg",
+  "/images/real-aroma.jpg",
+  "/images/real-deep.jpg",
+];
 
 type Runtime = {
   settings: Record<string, string>;
@@ -185,12 +192,46 @@ export default function SpaExperience({ route }: { route: string }) {
       { threshold: 0.1 },
     );
     document
-      .querySelectorAll(".section,.gallery-band,.page-intro,.telegram-band")
-      .forEach((element) => {
+      .querySelectorAll(
+        ".section > *,.gallery-band > *,.page-intro > *,footer > *,.policy article > *,.telegram-band > *",
+      )
+      .forEach((element, index) => {
         element.classList.add("scroll-reveal");
+        (element as HTMLElement).style.setProperty(
+          "--reveal-delay",
+          `${Math.min(index % 5, 4) * 70}ms`,
+        );
         observer.observe(element);
       });
     return () => observer.disconnect();
+  }, [route, reducedMotion]);
+
+  useEffect(() => {
+    if (reducedMotion || route !== "home") return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const hero = document.querySelector<HTMLElement>(".hero");
+      if (!hero) return;
+      const progress = Math.max(
+        0,
+        Math.min(
+          1,
+          -hero.getBoundingClientRect().top / Math.max(hero.offsetHeight, 1),
+        ),
+      );
+      hero.style.setProperty("--hero-shift", `${progress * 54}px`);
+      hero.style.setProperty("--hero-copy-shift", `${progress * -22}px`);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, [route, reducedMotion]);
 
   const filtered = useMemo(
@@ -249,12 +290,6 @@ export default function SpaExperience({ route }: { route: string }) {
                 {item}
               </Link>
             ))}
-          </div>
-          <div className="nav-actions" aria-label="Quick contact">
-            <span className="nav-location">
-              <MapPin />
-              Jaipur
-            </span>
           </div>
         </nav>
       </header>
@@ -562,21 +597,17 @@ function Home({
             </article>
           ))}
         </div>
-        <div className="fee-mascot-wrap">
-          <div className="fee-strip">
-            <div>
-              <small>{content.fee}</small>
-              <strong>
-                {runtime.settings.registration_fee || business.registrationFee}
-              </strong>
-            </div>
-            <p>
-              Validity and refund terms are explained clearly before
-              confirmation.
-            </p>
-            <Check />
+        <div className="fee-strip">
+          <div>
+            <small>{content.fee}</small>
+            <strong>
+              {runtime.settings.registration_fee || business.registrationFee}
+            </strong>
           </div>
-          <RiveMascot pose={5} className="mascot-fee" />
+          <p>
+            Validity and refund terms are explained clearly before confirmation.
+          </p>
+          <Check />
         </div>
       </section>
 
@@ -592,9 +623,7 @@ function Home({
                 photos={therapist.photos}
                 primary={String(
                   therapist.imageUrl ||
-                    (index === 0
-                      ? "/images/portrait-2.jpg"
-                      : "/images/portrait-3.jpg"),
+                    profileFallbacks[index % profileFallbacks.length],
                 )}
                 name={String(therapist.name_en || "Therapist")}
               />
@@ -691,11 +720,10 @@ function Pricing({ runtime }: { runtime: Runtime }) {
   ];
   return (
     <section className="section pricing-section">
-      <RiveMascot pose={2} className="mascot-pricing" />
       <div className="section-head">
         <span className="kicker">YOUR TIME, CLEARLY PRICED</span>
         <h2>Choose your pace.</h2>
-        <p>Gopalpura Mode, Jaipur, Rajasthan</p>
+        <p>Transparent timings and clear prices before you connect.</p>
       </div>
       <div className="package-grid">
         {prices.map(([id, label, price]) => (
@@ -849,9 +877,7 @@ function Therapists({
               photos={therapist.photos}
               primary={String(
                 therapist.imageUrl ||
-                  (index === 0
-                    ? "/images/portrait-2.jpg"
-                    : "/images/portrait-3.jpg"),
+                  profileFallbacks[index % profileFallbacks.length],
               )}
               name={String(therapist.name_en || "Therapist")}
             />
@@ -1006,10 +1032,6 @@ function TelegramContact({
         />
         <div className="contact-meta">
           <span>
-            <MapPin />
-            {runtime.settings.address || business.address}, {business.city}
-          </span>
-          <span>
             <Clock3 />
             {runtime.settings.opening_hours || business.hours}
           </span>
@@ -1022,7 +1044,6 @@ function TelegramContact({
 function TelegramBand({ href, label }: { href: string; label: string }) {
   return (
     <section className="telegram-band">
-      <RiveMascot pose={7} className="mascot-telegram" />
       <div>
         <span>
           <Sparkles /> PRIVATE · DIRECT · SIMPLE
@@ -1171,10 +1192,6 @@ function Footer({
         <Leaf />
         <h2>{siteName}</h2>
         <p>Quiet, transparent, professional wellness.</p>
-        <span className="footer-location">
-          <MapPin />
-          Gopalpura Mode · Jaipur
-        </span>
       </div>
       <div>
         <b>Explore</b>
@@ -1199,9 +1216,9 @@ function Footer({
         </button>
       </div>
       <div>
-        <b>{runtime.settings.city || business.city}</b>
-        <span>{runtime.settings.address || business.address}</span>
+        <b>Availability</b>
         <span>{runtime.settings.opening_hours || business.hours}</span>
+        <span>Confirm directly on Telegram</span>
       </div>
       <p className="footer-note">
         Direct Telegram booking · No visitor login · Admin-managed content and
