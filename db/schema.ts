@@ -8,6 +8,7 @@ export const enquiries = sqliteTable("enquiries", {
   firstName: text("first_name").notNull().default(""),
   lastName: text("last_name").notNull().default(""),
   buttonId: text("button_id").notNull().default("legacy"),
+  encryptedDetails: text("encrypted_details"),
   phone: text("phone"),
   gender: text("gender").notNull(),
   age: integer("age").notNull(),
@@ -68,3 +69,9 @@ export const analyticsEvents = sqliteTable("analytics_events", {
   occurredAt: integer("occurred_at", { mode: "timestamp" }).notNull(),
   metadata: text("metadata"),
 }, (table) => [index("idx_analytics_events_session").on(table.sessionId), index("idx_analytics_events_name_time").on(table.eventName, table.occurredAt)]);
+export const therapistPhotos = sqliteTable("therapist_photos", {
+ id:text("id").primaryKey(),
+ therapistId:text("therapist_id").notNull(),
+ imageKey:text("image_key").notNull(),
+ createdAt:integer("created_at").notNull(),
+}, table=>[index("idx_therapist_photos_profile").on(table.therapistId)]);

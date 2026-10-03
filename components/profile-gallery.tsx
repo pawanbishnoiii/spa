@@ -1,0 +1,3 @@
+"use client";
+import {useState} from "react";
+export default function ProfileGallery({photos,primary,name}:{photos?:Array<{id:string;url:string}>;primary:string;name:string}){const list=[primary,...(photos||[]).map(p=>p.url)].filter((v,i,a)=>a.indexOf(v)===i);const [selected,setSelected]=useState(0);return <div className="profile-gallery"><div className="profile-gallery-main"><img src={list[selected]||primary} alt={name+" profile photograph"} loading="lazy"/></div>{list.length>1&&<div className="profile-gallery-thumbs">{list.map((url,i)=><button key={url} onClick={()=>setSelected(i)} aria-label={"View photograph "+(i+1)} aria-pressed={selected===i}><img src={url} alt="" loading="lazy"/></button>)}</div>}</div>}

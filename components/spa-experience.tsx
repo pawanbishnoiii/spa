@@ -22,6 +22,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import AnalyticsTracker from "@/components/analytics-tracker";
 import LeadDialog from "@/components/lead-dialog";
+import RiveCharacter from "@/components/rive-character";
+import ProfileGallery from "@/components/profile-gallery";
 import { RitualIcon } from "@/components/ritual-icons";
 import { business, services, therapists } from "@/lib/spa-config";
 
@@ -46,7 +48,7 @@ const content = {
 
 type Runtime = {
   settings: Record<string, string>;
-  therapists: Array<Record<string, string | number | null>>;
+  therapists: Array<Record<string, any>>;
 };
 
 function telegramHref(value: string) {
@@ -96,6 +98,7 @@ export default function SpaExperience({ route }: { route: string }) {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [runtime, setRuntime] = useState<Runtime>({ settings: {}, therapists: [] });
   const [lead,setLead]=useState<{href:string;label:string;service:string;buttonId:string;therapist?:string}|null>(null);
+  const [menuOpen,setMenuOpen]=useState(false);
   const [floating,setFloating]=useState(false);
   useEffect(()=>{const open=(event:Event)=>setLead((event as CustomEvent).detail);window.addEventListener("open-spa-lead",open);const update=()=>{const hero=document.querySelector(".hero");const inHero=hero&&hero.getBoundingClientRect().bottom>100;const visible=[...document.querySelectorAll("[data-button]:not(.floating-telegram)")].some(el=>{const r=el.getBoundingClientRect();return r.height>0&&r.top<innerHeight&&r.bottom>0});setFloating(!inHero&&!visible)};window.addEventListener("scroll",update,{passive:true});update();return()=>{window.removeEventListener("open-spa-lead",open);window.removeEventListener("scroll",update)}},[]);
 
@@ -164,16 +167,16 @@ export default function SpaExperience({ route }: { route: string }) {
             ))}
           </div>
           <div className="nav-actions">
-            <Sheet>
-              <SheetTrigger className="menu-btn" aria-label="Open navigation"><Menu /></SheetTrigger>
+            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+              <SheetTrigger className="menu-btn" aria-label="Open navigation"><Menu /><span>Menu</span></SheetTrigger>
               <SheetContent className="mobile-sheet">
                 <SheetHeader>
                   <SheetTitle>{siteName}</SheetTitle>
                   <SheetDescription>{content.eyebrow}</SheetDescription>
                 </SheetHeader>
-                <div className="mobile-links">
-                  {content.nav.map((item, index) => <Link key={item} href={to(content.paths[index])}>{item}<ChevronRight /></Link>)}
-                  <TelegramLink href={telegramUrl} label={telegramLabel} className="mobile-telegram" />
+                <div className="mobile-menu-intro"><span>YOUR NEXT QUIET MOMENT</span><h2>Find your reset.</h2><p>Gopalpura Mode · Jaipur</p></div><div className="mobile-links"><Link href="/en" onClick={()=>setMenuOpen(false)}>Home</Link>
+                  {content.nav.map((item, index) => <Link key={item} onClick={()=>setMenuOpen(false)} href={to(content.paths[index])}>{item}<ChevronRight /></Link>)}
+                  <Link href={to("contact")} onClick={()=>setMenuOpen(false)}>Contact the team</Link><TelegramLink href={telegramUrl} label={telegramLabel} className="mobile-telegram" />
                 </div>
               </SheetContent>
             </Sheet>
@@ -257,7 +260,7 @@ function Home({
   return (
     <main>
       <section className="hero">
-        <Image src="/images/hero-bed.jpg" alt="Smiling adult woman seated on a bed in a white spa robe" fill priority sizes="100vw" />
+        <Image src={runtime.settings.hero_image||"/images/hero-modern.jpg"} alt="Adult woman relaxing in a white spa robe" fill priority sizes="100vw" />
         <div className="hero-shade" /><div className="hero-photo-caption"><Sparkles/><span>A little pause. A fresh start.</span></div>
         <div className="hero-orbit" aria-hidden="true"><LottieLight src="/breathe.json" autoplay={!reducedMotion} loop={!reducedMotion} /></div>
         <div className="hero-motes" aria-hidden="true"><i /><i /><i /></div>
@@ -282,9 +285,10 @@ function Home({
 
       <MotionTicker />
       <Pricing runtime={runtime}/>
-      <section className="spa-photo-story section"><div className="section-head"><span className="kicker">SLOW DOWN · FEEL GOOD</span><h2>Your kind of reset.</h2><p>Warm welcomes, thoughtful care and a moment that belongs to you.</p></div><div className="spa-photo-strip">{["/images/portrait-1.jpg","/images/portrait-2.jpg","/images/portrait-3.jpg","/images/real-smile.jpg"].map((src,i)=><figure key={src}><Image src={src} alt={["Adult woman relaxing in a spa robe","Smiling adult woman enjoying a skincare ritual","Adult woman taking a peaceful spa break","Smiling adult woman with a towel wrap"][i]} fill sizes="(max-width:680px) 65vw,25vw"/><figcaption>{["Make room for calm","A ritual just for you","A fresh perspective","Leave with a smile"][i]}</figcaption></figure>)}</div><small className="photo-story-note">Real stock spa photography · illustrative models, not staff portraits.</small></section>
+      <section className="spa-photo-story section"><div className="section-head"><span className="kicker">SLOW DOWN · FEEL GOOD</span><h2>Your kind of reset.</h2><p>Warm welcomes, thoughtful care and a moment that belongs to you.</p></div><div className="spa-photo-strip">{["/images/spa-aroma-new.jpg","/images/spa-facial-new.jpg","/images/spa-pool-new.jpg","/images/real-smile.jpg"].map((src,i)=><figure key={src}><Image src={src} alt={["Adult woman relaxing in a spa robe","Smiling adult woman enjoying a skincare ritual","Adult woman taking a peaceful spa break","Smiling adult woman with a towel wrap"][i]} fill sizes="(max-width:680px) 65vw,25vw"/><figcaption>{["Make room for calm","A ritual just for you","A fresh perspective","Leave with a smile"][i]}</figcaption></figure>)}</div><small className="photo-story-note">Real stock spa photography · illustrative models, not staff portraits.</small></section>
       <Explorer {...{ duration, setDuration, style, setStyle, filtered, runtime, telegramUrl, telegramLabel }} />
 
+      <section className="section rive-section"><RiveCharacter/></section>
       <section className="experience-bento section">
         <article className="bento-title"><span className="kicker">A SMARTER SPA JOURNEY</span><h2>Calm experience. Sharp interface.</h2><p>A wellness journey that feels personal, transparent and effortless on every screen.</p></article>
         <article className="bento-lottie"><LottieLight src="/breathe.json" autoplay={!reducedMotion} loop={!reducedMotion} /><div><span>Breathe slower</span><strong>04 · 06</strong></div></article>
@@ -309,7 +313,7 @@ function Home({
 
       <section className="section team">
         <div className="section-head"><span className="kicker">03 · PROFESSIONAL TEAM</span><h2>{content.team}</h2></div>
-        <div className="team-grid">{team.map((therapist, index) => <article key={String(therapist.id)}><div className="portrait-photo"><Image src={String(therapist.imageUrl || (index===0?"/images/real-aroma.jpg":"/images/real-deep.jpg"))} alt="Professional therapist profile" fill sizes="(max-width:700px) 35vw,220px" /></div><div><h3>{String(therapist.name_en || "Therapist")}</h3><p>{String(therapist.speciality_en || "Professional massage care")}</p><small>Stock spa photograph · staff availability on request</small><button className="therapist-choice" onClick={()=>{if(!collectUserDetails){window.open(telegramUrl,"_blank","noopener");return}window.dispatchEvent(new CustomEvent("open-spa-lead",{detail:{href:telegramUrl,label:telegramLabel,service:"calm",buttonId:`therapist_${therapist.id}`,therapist:String(therapist.name_en)}}))}}>Request this preference <ArrowUpRight/></button></div></article>)}</div>
+        <div className="team-grid">{team.map((therapist, index) => <article key={String(therapist.id)}><ProfileGallery photos={therapist.photos} primary={String(therapist.imageUrl || (index===0?"/images/portrait-2.jpg":"/images/portrait-3.jpg"))} name={String(therapist.name_en||"Therapist")}/><div><h3>{String(therapist.name_en || "Therapist")}</h3><p>{String(therapist.speciality_en || "Professional massage care")}</p><small>Stock spa photograph · staff availability on request</small><button className="therapist-choice" onClick={()=>{if(!collectUserDetails){window.open(telegramUrl,"_blank","noopener");return}window.dispatchEvent(new CustomEvent("open-spa-lead",{detail:{href:telegramUrl,label:telegramLabel,service:"calm",buttonId:`therapist_${therapist.id}`,therapist:String(therapist.name_en)}}))}}>Request this preference <ArrowUpRight/></button></div></article>)}</div>
       </section>
 
       <TelegramBand href={telegramUrl} label={telegramLabel} />
@@ -368,7 +372,7 @@ function Services(props: Parameters<typeof Explorer>[0]) {
 
 function Therapists({ runtime, telegramUrl, telegramLabel }: { runtime: Runtime; telegramUrl: string; telegramLabel: string }) {
   const team = displayTherapists(runtime);
-  return <main className="inner"><PageIntro eyebrow="PROFESSIONAL TEAM" title="Skill comes first. Always." text="Profiles focus on experience, language and service specialities—and can be updated by the admin." /><section className="profile-list section">{team.map((therapist, index) => <article key={String(therapist.id)}><div className="profile-photo"><Image src={String(therapist.imageUrl || (index===0?"/images/real-aroma.jpg":"/images/real-deep.jpg"))} alt="Professional therapist profile" fill sizes="(max-width:700px) 100vw,420px" /></div><div><span className="kicker">THERAPIST PROFILE</span><h2>{String(therapist.name_en || "Therapist")}</h2><p>{String(therapist.speciality_en || "Professional massage care")}</p><dl><div><dt>Approach</dt><dd>Respectful, professional care</dd></div><div><dt>Availability</dt><dd>Confirm directly on Telegram</dd></div></dl><TelegramLink href={telegramUrl} label={telegramLabel} /></div></article>)}</section></main>;
+  return <main className="inner"><PageIntro eyebrow="PROFESSIONAL TEAM" title="Skill comes first. Always." text="Explore the team’s specialities. Share your preference; we’ll confirm who is available." /><section className="profile-list section">{team.map((therapist, index) => <article key={String(therapist.id)}><ProfileGallery photos={therapist.photos} primary={String(therapist.imageUrl || (index===0?"/images/portrait-2.jpg":"/images/portrait-3.jpg"))} name={String(therapist.name_en||"Therapist")}/><div><span className="kicker">THERAPIST PROFILE</span><h2>{String(therapist.name_en || "Therapist")}</h2><p>{String(therapist.speciality_en || "Professional massage care")}</p><dl><div><dt>Approach</dt><dd>Respectful, professional care</dd></div><div><dt>Availability</dt><dd>Confirm directly on Telegram</dd></div></dl><TelegramLink href={telegramUrl} label={telegramLabel} /></div></article>)}</section></main>;
 }
 
 function FirstVisit({ runtime, telegramUrl, telegramLabel }: { runtime: Runtime; telegramUrl: string; telegramLabel: string }) {
@@ -390,7 +394,7 @@ function TelegramBand({ href, label }: { href: string; label: string }) {
 
 function Policy({ kind }: { kind: string }) {
   const titles: Record<string, string> = { privacy: "Privacy Policy", terms: "Terms of Service", refund: "Cancellation & Refund" };
-  return <main className="policy inner"><PageIntro eyebrow="POLICY" title={titles[kind]} /><article>{kind === "privacy" ? <><h2>What we collect</h2><p>The public website does not ask visitors to create an account. With consent, anonymous analytics may record page visits, session duration, traffic source and generic Telegram clicks.</p><h2>Use and retention</h2><p>Analytics uses a daily rotating visitor hash; raw IP addresses are not stored. Telegram conversations are handled under Telegram’s own policies.</p></> : kind === "terms" ? <><h2>Conversation, not a confirmed booking</h2><p>Opening Telegram or sending a message does not confirm an appointment. Staff confirms availability, pricing and registration separately.</p><h2>Professional conduct</h2><p>Respectful conduct is expected from the spa and every customer.</p></> : <><h2>Separate fees, clear terms</h2><p>Registration and service refund terms are explained before an appointment is confirmed. Ask the team on Telegram for the current cancellation window and no-show policy.</p></>}</article></main>;
+  return <main className="policy inner"><PageIntro eyebrow="POLICY" title={titles[kind]} /><article>{kind === "privacy" ? <><h2>What we collect</h2><p>The public website does not ask visitors to create an account. With consent, anonymous analytics may record page visits, session duration, traffic source and generic Telegram clicks.</p><h2>Enquiry details</h2><p>When the enquiry form is enabled, we save your name, age, gender, chosen treatment, therapist preference and optional phone number so the team can respond. Details are encrypted in storage and available only to authorised administrators. Enquiries are retained for up to 90 days. Ask the team on Telegram to correct or delete your information.</p><h2>Use and retention</h2><p>Analytics uses a daily rotating visitor hash; raw IP addresses are not stored. Telegram conversations are handled under Telegram’s own policies.</p></> : kind === "terms" ? <><h2>Conversation, not a confirmed booking</h2><p>Opening Telegram or sending a message does not confirm an appointment. Staff confirms availability, pricing and registration separately.</p><h2>Professional conduct</h2><p>Respectful conduct is expected from the spa and every customer.</p></> : <><h2>Separate fees, clear terms</h2><p>Registration and service refund terms are explained before an appointment is confirmed. Ask the team on Telegram for the current cancellation window and no-show policy.</p></>}</article></main>;
 }
 
 function PageIntro({ eyebrow, title, text }: { eyebrow: string; title: string; text?: string }) {
@@ -403,5 +407,5 @@ function Faq() {
 }
 
 function Footer({ siteName, to, runtime, telegramUrl, telegramLabel }: { siteName: string; to: (path: string) => string; runtime: Runtime; telegramUrl: string; telegramLabel: string }) {
-  return <footer><div className="footer-brand"><Leaf /><h2>{siteName}</h2><p>Quiet, transparent, professional wellness.</p><TelegramLink href={telegramUrl} label={telegramLabel} className="footer-telegram" /></div><div><b>Explore</b><Link href={to("services")}>Treatments</Link><Link href={to("therapists")}>Therapists</Link><Link href={to("first-visit")}>First visit</Link></div><div><b>Policies</b><Link href={to("privacy")}>Privacy</Link><Link href={to("terms")}>Terms</Link><Link href={to("refund")}>Cancellation & Refund</Link><button className="footer-cookie" onClick={() => window.dispatchEvent(new Event("open-cookie-preferences"))}>Cookie preferences</button></div><div><b>{runtime.settings.city||business.city}</b><span>{runtime.settings.address || business.address}</span><span>{runtime.settings.opening_hours || business.hours}</span></div><p className="footer-note">Direct Telegram booking · No visitor login · Admin-managed content and pricing.</p></footer>;
+  return <footer><div className="footer-brand"><Leaf /><h2>{siteName}</h2><p>Quiet, transparent, professional wellness.</p><TelegramLink href={telegramUrl} label={telegramLabel} className="footer-telegram" /></div><div><b>Explore</b><Link href={to("services")}>Treatments</Link><Link href={to("therapists")}>Therapists</Link><Link href={to("first-visit")}>First visit</Link><Link href={to("about")}>About</Link><Link href={to("contact")}>Contact</Link></div><div><b>Policies</b><Link href={to("privacy")}>Privacy</Link><Link href={to("terms")}>Terms</Link><Link href={to("refund")}>Cancellation & Refund</Link><button className="footer-cookie" onClick={() => window.dispatchEvent(new Event("open-cookie-preferences"))}>Cookie preferences</button></div><div><b>{runtime.settings.city||business.city}</b><span>{runtime.settings.address || business.address}</span><span>{runtime.settings.opening_hours || business.hours}</span></div><p className="footer-note">Direct Telegram booking · No visitor login · Admin-managed content and pricing.</p></footer>;
 }
