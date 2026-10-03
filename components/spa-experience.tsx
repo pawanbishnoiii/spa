@@ -282,6 +282,7 @@ function Home({
 
       <MotionTicker />
       <Pricing runtime={runtime}/>
+      <section className="spa-photo-story section"><div className="section-head"><span className="kicker">SLOW DOWN · FEEL GOOD</span><h2>Your kind of reset.</h2><p>Warm welcomes, thoughtful care and a moment that belongs to you.</p></div><div className="spa-photo-strip">{["/images/portrait-1.jpg","/images/portrait-2.jpg","/images/portrait-3.jpg","/images/real-smile.jpg"].map((src,i)=><figure key={src}><Image src={src} alt={["Adult woman relaxing in a spa robe","Smiling adult woman enjoying a skincare ritual","Adult woman taking a peaceful spa break","Smiling adult woman with a towel wrap"][i]} fill sizes="(max-width:680px) 65vw,25vw"/><figcaption>{["Make room for calm","A ritual just for you","A fresh perspective","Leave with a smile"][i]}</figcaption></figure>)}</div><small className="photo-story-note">Real stock spa photography · illustrative models, not staff portraits.</small></section>
       <Explorer {...{ duration, setDuration, style, setStyle, filtered, runtime, telegramUrl, telegramLabel }} />
 
       <section className="experience-bento section">
