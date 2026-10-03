@@ -5,7 +5,7 @@ import { requireAdminApi } from "@/lib/admin-auth";
 
 const settingKeys = [
   "price_calm_30","price_calm_60","price_calm_90","price_deep_60","price_deep_90","price_aroma_60","price_aroma_90",
-  "registration_fee","business_phone","telegram_username","telegram_cta_en","telegram_cta_hi","opening_hours","address","meta_pixel_id","adsense_client_id",
+  "site_name","registration_fee","business_phone","telegram_username","telegram_cta_en","opening_hours","address","meta_pixel_id","adsense_client_id",
 ] as const;
 const updateSchema = z.object({
   settings: z.record(z.enum(settingKeys), z.string().trim().max(500)).optional(),
@@ -37,7 +37,8 @@ export async function POST(request: Request) {
   if (!env.DB) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   const parsed = updateSchema.safeParse(await request.json().catch(()=>null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid update" }, { status: 400 });
-  if (["telegram_cta_en","telegram_cta_hi"].some((key)=>(parsed.data.settings?.[key as keyof typeof parsed.data.settings]?.length??0)>40)) return NextResponse.json({ error:"Telegram button labels must be 40 characters or fewer" }, { status:400 });
+  if ((parsed.data.settings?.telegram_cta_en?.length??0)>40) return NextResponse.json({ error:"Telegram button labels must be 40 characters or fewer" }, { status:400 });
+  if ((parsed.data.settings?.site_name?.length??0)>80) return NextResponse.json({ error:"Website name must be 80 characters or fewer" }, { status:400 });
   const now = Math.floor(Date.now()/1000); const statements: D1PreparedStatement[] = [];
   for (const [key,value] of Object.entries(parsed.data.settings??{})) statements.push(env.DB.prepare("INSERT INTO site_settings (key,value,updated_at,updated_by) VALUES (?,?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at, updated_by=excluded.updated_by").bind(key,value,now,user.email));
   for (const therapist of parsed.data.therapists??[]) statements.push(env.DB.prepare("INSERT INTO therapist_profiles (id,name_en,name_hi,speciality_en,speciality_hi,image_key,active,updated_at) VALUES (?,?,?,?,?,NULL,?,?) ON CONFLICT(id) DO UPDATE SET name_en=excluded.name_en,name_hi=excluded.name_hi,speciality_en=excluded.speciality_en,speciality_hi=excluded.speciality_hi,active=excluded.active,updated_at=excluded.updated_at").bind(therapist.id,therapist.nameEn,therapist.nameHi,therapist.specialityEn,therapist.specialityHi,therapist.active?1:0,now));

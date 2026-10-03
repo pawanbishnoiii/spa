@@ -80,3 +80,70 @@ footer{background:#0f3027;color:#d7dfda;padding:75px clamp(22px,7vw,112px) 35px;
 .btn-telegram{background:#249bd7;color:#fff;box-shadow:0 12px 34px rgba(36,155,215,.32)}.btn-telegram:hover{background:#35ace7;color:#fff}.hero-cta{flex-wrap:wrap}.ritual-card{padding:0;min-height:600px}.ritual-card:before{z-index:3}.ritual-photo{position:relative;aspect-ratio:4/5;min-height:360px;overflow:hidden;background:#dce7e3}.ritual-photo:after{content:"";position:absolute;inset:auto 0 0;height:35%;background:linear-gradient(transparent,rgba(3,36,30,.2));pointer-events:none}.ritual-photo img{object-fit:cover;object-position:center 28%;transition:transform .65s cubic-bezier(.2,.8,.2,1)}.ritual-card:hover .ritual-photo img{transform:scale(1.045)}.ritual-content{padding:24px;display:flex;flex-direction:column;flex:1}.ritual-content h3{margin-top:24px}.ritual-content .price-line{margin-top:auto}.ritual-content>button{min-height:46px;align-items:center}.ritual-content>button svg{width:18px}.ritual-grid{align-items:stretch}
 @media(max-width:980px){.ritual-card{min-height:570px}.ritual-photo{min-height:330px}}
 @media(max-width:680px){.hero-cta{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hero-cta .btn{min-height:52px;padding:0 12px}.hero-cta .hero-call{display:none}.hero-cta .btn-telegram{display:inline-flex}.ritual-card{min-height:0;border-radius:30px}.ritual-photo{aspect-ratio:5/4;min-height:290px}.ritual-content{padding:22px}.ritual-content h3{font-size:32px;margin-top:22px}.ritual-content>button{min-height:52px}.explorer{padding-left:14px;padding-right:14px}.style-chips{scrollbar-width:none}.duration-tabs{margin-top:34px}}
+
+/* Telegram-first English experience */
+:root{
+  --font-sans:"Manrope Variable",Manrope,system-ui,sans-serif;
+  --font-display:"Playfair Display Variable","Times New Roman",serif;
+  --telegram:#229ed9;
+  --telegram-dark:#087eb6;
+}
+body{font-family:var(--font-sans);text-rendering:optimizeLegibility}
+.brand b,.hero h1,.page-intro h1,.section-head h2,.editorial h2,.gallery-band h2,.about-grid h2,.timeline h2,.ritual-card h3,.team-grid h3,.profile-list h2,.registration-panel h2,footer h2,.bento-title h2,.bento-stat strong,.bento-path>span,.policy article h2,.policy-disclosure h2,.admin-top h1,.metric-card strong,.chart-card h2,.event-card h2,.editor-heading h2,.admin-denied h1,.admin-gate-quote h1,.admin-gate-card h2,.consent-card h2{font-family:var(--font-display)}
+.preview-ribbon{display:none!important}
+.nav-wrap{position:fixed;top:0;padding-top:16px;z-index:70}
+.nav{max-width:1320px;box-shadow:0 18px 60px rgba(0,0,0,.18)}
+.brand{min-width:min(285px,27vw)}
+.brand>span:last-child{min-width:0}.brand b{font-size:17px;max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.brand small{font-family:var(--font-sans)}
+.nav-actions>.btn-telegram{min-height:44px;padding:0 16px}.nav-actions>.btn-telegram .telegram-arrow{display:none}
+.inner{padding-top:118px}
+.scroll-progress{position:fixed;z-index:100;left:0;right:0;top:0;height:4px;background:linear-gradient(90deg,var(--telegram),#68d5ff,var(--sun));transform:scaleX(0);transform-origin:left;animation:page-progress linear;animation-timeline:scroll(root)}
+@keyframes page-progress{to{transform:scaleX(1)}}
+
+.btn-telegram,.floating-telegram,.mobile-telegram,.ritual-telegram,.telegram-band-button,.footer-telegram{background:linear-gradient(135deg,var(--telegram),#44b8ed);color:#fff;border:0;box-shadow:0 14px 38px rgba(34,158,217,.32);transition:transform .28s cubic-bezier(.2,.8,.2,1),box-shadow .28s ease,filter .28s ease}
+.btn-telegram:hover,.floating-telegram:hover,.mobile-telegram:hover,.ritual-telegram:hover,.telegram-band-button:hover,.footer-telegram:hover{background:linear-gradient(135deg,#38ace2,var(--telegram-dark));color:#fff;transform:translateY(-3px);box-shadow:0 20px 46px rgba(34,158,217,.42);filter:saturate(1.08)}
+.telegram-arrow{width:16px!important;height:16px!important;transition:transform .25s ease}.btn-telegram:hover .telegram-arrow,.ritual-telegram:hover .telegram-arrow,.telegram-band-button:hover .telegram-arrow{transform:translate(3px,-3px)}
+.hero-telegram{min-width:245px;min-height:58px;padding:0 24px;font-size:15px;animation:telegram-glow 2.8s ease-in-out infinite}
+@keyframes telegram-glow{0%,100%{box-shadow:0 14px 38px rgba(34,158,217,.28)}50%{box-shadow:0 17px 55px rgba(70,194,246,.52)}}
+.hero{min-height:760px}.hero-copy{z-index:4}.hero-copy p{max-width:650px}.hero-cta{display:block}.hero-trust{font-size:14px}.hero-card{z-index:4}
+.hero-motes{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden}.hero-motes i{position:absolute;width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:0 0 28px #fff;opacity:.55;animation:mote 8s ease-in-out infinite}.hero-motes i:nth-child(1){left:48%;top:24%}.hero-motes i:nth-child(2){left:72%;top:43%;width:7px;height:7px;animation-delay:-2.7s}.hero-motes i:nth-child(3){left:62%;top:68%;width:13px;height:13px;animation-delay:-5.2s}
+@keyframes mote{0%,100%{transform:translate3d(0,10px,0) scale(.7);opacity:.25}50%{transform:translate3d(18px,-30px,0) scale(1.2);opacity:.8}}
+
+.motion-ticker{height:58px;background:var(--sun);color:var(--ink-deep);overflow:hidden;display:flex;align-items:center;border-block:1px solid rgba(3,43,35,.14)}.motion-ticker>div{display:flex;width:max-content;animation:ticker 24s linear infinite}.motion-ticker span{display:flex;align-items:center;gap:18px;padding-right:42px;font-size:12px;font-weight:850;letter-spacing:.16em;white-space:nowrap}.motion-ticker i{width:9px;height:9px;border-radius:50%;background:var(--coral)}
+@keyframes ticker{to{transform:translateX(-50%)}}
+
+.ritual-telegram{min-height:54px;padding:0 17px;border-radius:17px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:800}.ritual-telegram span{flex:1}.ritual-telegram svg:last-child{margin-left:auto}
+.ritual-card{isolation:isolate}.ritual-card:nth-child(2){transition-delay:.08s}.ritual-card:nth-child(3){transition-delay:.16s}
+.telegram-text-link{color:var(--telegram-dark);border-color:var(--telegram);display:inline-flex;gap:9px}.telegram-text-link>svg:first-child{width:19px}.telegram-text-link span{font-weight:800}
+
+.telegram-band{margin:0;padding:clamp(42px,6vw,82px) clamp(22px,7vw,112px);background:radial-gradient(circle at 84% 20%,rgba(100,216,255,.42),transparent 26%),linear-gradient(130deg,#087db3,#24a8e5 58%,#096d9d);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:40px;position:relative;overflow:hidden}.telegram-band:after{content:"";position:absolute;width:340px;height:340px;border:1px solid rgba(255,255,255,.26);border-radius:50%;right:-110px;top:-190px}.telegram-band>div,.telegram-band-button{position:relative;z-index:1}.telegram-band>div>span{display:flex;align-items:center;gap:9px;font-size:11px;font-weight:850;letter-spacing:.18em}.telegram-band h2{font:clamp(38px,5.2vw,72px)/1.02 var(--font-display);letter-spacing:-.035em;max-width:800px;margin:14px 0 0}.telegram-band-button{min-width:230px;min-height:62px;border-radius:999px;background:#fff;color:#087eb6;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:850;box-shadow:0 18px 50px rgba(0,61,91,.25)}.telegram-band-button:hover{color:#fff}
+
+.floating-telegram{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));z-index:65;min-height:58px;border-radius:20px;padding:0 17px;display:flex;align-items:center;gap:9px;font-weight:850}.floating-telegram:before{content:"";position:absolute;inset:-6px;border:1px solid rgba(34,158,217,.36);border-radius:25px;animation:telegram-ring 2.4s ease-out infinite;pointer-events:none}.floating-telegram svg{width:21px;height:21px}.floating-telegram .telegram-arrow{display:none}
+@keyframes telegram-ring{0%{transform:scale(.92);opacity:.9}75%,100%{transform:scale(1.14);opacity:0}}
+.mobile-telegram{margin-top:22px;min-height:58px;border-radius:18px;padding:0 18px;display:flex!important;align-items:center;justify-content:center!important;gap:10px!important;font-family:var(--font-sans)!important;font-size:15px!important;font-weight:800;border:0!important}.mobile-telegram .telegram-arrow{margin-left:auto}
+.footer-telegram{margin-top:20px;width:max-content;min-height:44px;border-radius:999px;padding:0 15px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800}.footer-telegram .telegram-arrow{display:none}
+
+.telegram-contact{background:linear-gradient(180deg,#f7f3ed,#eaf5f5)}.telegram-contact-card{max-width:900px;margin:80px auto 110px;background:#fff;border-radius:38px;text-align:center;box-shadow:0 30px 90px rgba(4,58,49,.12);padding:70px clamp(24px,7vw,90px)}.telegram-contact-icon{width:76px;height:76px;border-radius:26px;background:linear-gradient(135deg,var(--telegram),#63cef8);color:#fff;display:grid;place-items:center;margin:0 auto 24px;box-shadow:0 18px 45px rgba(34,158,217,.3)}.telegram-contact-icon svg{width:32px;height:32px}.telegram-contact-card>span{font-size:11px;letter-spacing:.18em;font-weight:850;color:var(--telegram-dark)}.telegram-contact-card h2{font:clamp(48px,7vw,86px)/1 var(--font-display);letter-spacing:-.04em;margin:15px 0}.telegram-contact-card>p{max-width:590px;margin:0 auto;color:#61736c;font-size:18px}.telegram-contact-button{margin:32px auto 0;min-height:62px;padding:0 27px}.contact-meta{margin-top:40px;padding-top:25px;border-top:1px solid #e1e9e6;display:flex;justify-content:center;gap:30px;flex-wrap:wrap;color:#64776f}.contact-meta span{display:flex;align-items:center;gap:8px}
+
+.mobile-tabbar,.mobile-dock,.visit-summary{display:none!important}
+.consent-card{z-index:90}
+footer{padding-bottom:45px}.footer-note{margin-bottom:0}
+.admin-gate-visual{background-image:linear-gradient(145deg,rgba(4,47,40,.9),rgba(4,47,40,.52)),url('/images/spa-threshold.webp')}
+
+@media(max-width:980px){
+  .brand{min-width:0}.nav-actions>.btn-telegram{display:none}.telegram-band{align-items:flex-start;flex-direction:column}.telegram-band-button{min-width:220px}.hero-card{display:none}
+}
+@media(max-width:680px){
+  .nav-wrap{top:0;padding:10px}.nav{height:64px;border-radius:20px;padding-inline:12px}.brand b{font-size:15px;max-width:210px}.brand small{display:block;font-size:8px}.inner{padding-top:84px}
+  .hero{height:auto;min-height:720px;border-radius:0 0 32px 32px}.hero-copy{top:auto;bottom:72px;left:20px;right:20px;transform:none}.hero h1{font-size:clamp(45px,14vw,59px);line-height:.94;margin:16px 0}.hero-copy p{font-size:15px;line-height:1.55}.hero-orbit{top:13%;right:-40px}.hero-cta{display:block}.hero-cta .hero-telegram{width:100%;min-height:58px}.hero-trust{font-size:12px;gap:8px;margin-top:17px}.hero-trust span{align-items:flex-start}.hero-motes i:nth-child(1){left:20%}.motion-ticker{height:52px}
+  .section{padding:68px 18px}.section-head p{font-size:15px}.duration-tabs button{min-width:0}.duration-tabs span{display:block;margin:0;font-size:11px}.ritual-photo{min-height:300px}.ritual-telegram{font-size:13px}.ritual-telegram span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .experience-bento{padding-inline:12px}.bento-title h2{font-size:43px}.telegram-band{padding:58px 20px}.telegram-band h2{font-size:43px}.telegram-band-button{width:100%}.gallery-band{height:500px}
+  .team-grid article{grid-template-columns:96px 1fr;gap:16px}.team-grid h3{font-size:24px}.team-grid p{font-size:14px}.team-grid small{display:none}
+  .floating-telegram{right:12px;bottom:calc(12px + env(safe-area-inset-bottom));min-height:54px;border-radius:18px;padding:0 14px}.floating-telegram span{font-size:13px}.consent-card{bottom:82px}
+  .telegram-contact-card{margin:35px 14px 75px;padding:52px 20px;border-radius:30px}.telegram-contact-card h2{font-size:52px}.telegram-contact-card>p{font-size:16px}.contact-meta{display:grid;gap:12px;text-align:left}.contact-meta span{align-items:flex-start}
+  footer{padding-bottom:100px}
+}
+@media(max-width:390px){.brand b{max-width:155px}.brand-mark{width:32px;height:32px}.hero{min-height:700px}.hero-copy{bottom:54px}.hero-trust span:last-child{display:none}.floating-telegram .telegram-arrow{display:none}.floating-telegram span{max-width:125px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}.scroll-progress{display:none}.motion-ticker>div,.hero-telegram,.hero-motes i,.floating-telegram:before{animation:none!important}.scroll-reveal{opacity:1;transform:none}::view-transition-old(root),::view-transition-new(root){animation:none!important}
+}

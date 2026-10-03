@@ -1,5 +1,5 @@
 export const business = {
-  name: "[SPA_NAME]", city: "[CITY]", address: "[ADDRESS]", phone: "[PHONE]",
+  name: "Quiet Ritual Spa", city: "[CITY]", address: "[ADDRESS]", phone: "[PHONE]",
   telegram: "[TELEGRAM_USERNAME]", hours: "[OPENING_HOURS]",
   registrationFee: "[REGISTRATION_FEE]", registrationValidity: "[VALIDITY]", retentionDays: 90,
 } as const;

@@ -3,7 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowUpRight, CalendarDays, Check, ChevronRight, Clock3, Copy, HomeIcon, Leaf, MapPin, Menu, MessageCircle, Phone, Sparkles, UserRound, X } from "lucide-react";
+import {
+  ArrowUpRight,
+  CalendarDays,
+  Check,
+  ChevronRight,
+  Clock3,
+  Leaf,
+  MapPin,
+  Menu,
+  MessageCircle,
+  Send,
+  ShieldCheck,
+  Sparkles,
+} from "lucide-react";
 import { LottieLight } from "lottie-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -11,81 +24,377 @@ import AnalyticsTracker from "@/components/analytics-tracker";
 import { RitualIcon } from "@/components/ritual-icons";
 import { business, services, therapists } from "@/lib/spa-config";
 
-type Lang = "hi" | "en";
-const copy = {
-  en: {
-    nav:["Treatments","Therapists","First visit","About","Contact"], paths:["services","therapists","first-visit","about","contact"],
-    eyebrow:"Professional wellness · thoughtfully personal", title:"A quieter kind of luxury.", intro:"Unhurried massage rituals, clear pricing and a respectful professional experience—designed around how you want to feel.", explore:"Explore treatments", call:"Call", telegram:"Telegram", illustrative:"Illustrative ambience · replace with real venue photography before launch", find:"Find your moment", findSub:"Choose the time you have. We’ll show rituals that fit.", minutes:"minutes", styles:["All","Gentle relaxation","Firmer pressure","Aromatic oils"], select:"Select this ritual", summary:"Your visit at a glance", enquiryFree:"Website enquiry is free", notBooking:"Not a confirmed appointment", price:"Massage price", fee:"Registration", availability:"Therapist preference is subject to availability.", first:"Your first visit, without guesswork", team:"Professional care, humanly delivered", gallery:"Inside the quiet", faq:"Good to know", footer:"A preview with unresolved business details. Complete the configuration before public launch.",
-  },
-  hi: {
-    nav:["ट्रीटमेंट","थेरेपिस्ट","पहली विज़िट","हमारे बारे में","संपर्क"], paths:["services","therapists","first-visit","about","contact"],
-    eyebrow:"प्रोफ़ेशनल वेलनेस · आपकी पसंद के अनुसार", title:"सुकून, एक नए अंदाज़ में।", intro:"आरामदायक मसाज रिचुअल, साफ़ कीमतें और सम्मानपूर्ण प्रोफ़ेशनल अनुभव—जैसा आप महसूस करना चाहते हैं।", explore:"ट्रीटमेंट देखें", call:"कॉल करें", telegram:"टेलीग्राम", illustrative:"यह दृश्य उदाहरण के लिए है · लॉन्च से पहले असली स्पा फ़ोटो लगाएँ", find:"अपना सुकून चुनें", findSub:"आपके पास जितना समय है, उसके अनुसार सही रिचुअल देखें।", minutes:"मिनट", styles:["सभी","हल्का विश्राम","गहरा दबाव","सुगंधित तेल"], select:"यह रिचुअल चुनें", summary:"आपकी विज़िट एक नज़र में", enquiryFree:"वेबसाइट पर पूछताछ निःशुल्क है", notBooking:"यह कन्फर्म अपॉइंटमेंट नहीं है", price:"मसाज की कीमत", fee:"रजिस्ट्रेशन", availability:"थेरेपिस्ट की पसंद उपलब्धता पर निर्भर है।", first:"पहली विज़िट—बिना किसी उलझन के", team:"प्रोफ़ेशनल देखभाल, इंसानी अपनापन", gallery:"सुकून के भीतर", faq:"ज़रूरी बातें", footer:"इस प्रीव्यू में कुछ बिज़नेस जानकारी बाकी है। पब्लिक लॉन्च से पहले कॉन्फ़िगरेशन पूरा करें।",
-  }
+const content = {
+  nav: ["Treatments", "Therapists", "First visit", "About"],
+  paths: ["services", "therapists", "first-visit", "about"],
+  eyebrow: "Professional wellness · thoughtfully personal",
+  title: "A quieter kind of luxury.",
+  intro: "Unhurried massage rituals, transparent pricing and respectful professional care—designed around how you want to feel.",
+  telegram: "Chat on Telegram",
+  illustrative: "Illustrative ambience · replace with real venue photography when available",
+  find: "Find your moment",
+  findSub: "Choose the time you have. We’ll show rituals that fit, then continue privately on Telegram.",
+  minutes: "minutes",
+  styles: ["All", "Gentle relaxation", "Firmer pressure", "Aromatic oils"],
+  fee: "Registration",
+  first: "Your first visit, without guesswork",
+  team: "Professional care, humanly delivered",
+  gallery: "Inside the quiet",
+  faq: "Good to know",
 } as const;
 
-function ButtonLink({href, children, ghost=false, className=""}:{href:string;children:React.ReactNode;ghost?:boolean;className?:string}) { return <Link className={`${ghost?"btn btn-ghost":"btn btn-solid"} ${className}`.trim()} href={href}>{children}</Link>; }
-function telegramHref(value:string){const clean=value.trim().replace(/^https?:\/\/(?:www\.)?/i,"").replace(/^(?:t\.me|telegram\.me)\//i,"").replace(/^@/,"").replace(/\/+$/,"");return `https://t.me/${clean}`}
+type Runtime = {
+  settings: Record<string, string>;
+  therapists: Array<Record<string, string | number | null>>;
+};
 
-export default function SpaExperience({lang,route}:{lang:Lang;route:string}) {
-  const c=copy[lang], other=lang==="hi"?"en":"hi";
-  const [duration,setDuration]=useState(60); const [style,setStyle]=useState(0); const [selected,setSelected]=useState<typeof services[number]|null>(null);
-  const [runtime,setRuntime]=useState<{settings:Record<string,string>;therapists:Array<Record<string,string|null>>}>({settings:{},therapists:[]});
-  useEffect(()=>{fetch("/api/public-config").then(r=>r.json()).then(setRuntime).catch(()=>undefined)},[]);
-  useEffect(()=>{const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;if(reduce)return;const observer=new IntersectionObserver(entries=>entries.forEach(entry=>entry.isIntersecting&&entry.target.classList.add("in-view")),{threshold:.12});document.querySelectorAll(".section,.gallery-band,.page-intro").forEach(el=>{el.classList.add("scroll-reveal");observer.observe(el)});return()=>observer.disconnect()},[route]);
-  useEffect(()=>{
-    const saved=localStorage.getItem("spa-selection"); if(saved) setSelected(services.find(s=>s.id===saved)??null);
-    const context=(document as unknown as {modelContext?:{registerTool:(tool:unknown,opts:{signal:AbortSignal})=>void|Promise<void>}}).modelContext;
-    if(!context?.registerTool) return;
-    const lifecycle=new AbortController();
-    void Promise.resolve(context.registerTool({name:"start_spa_enquiry",title:"Start spa enquiry",description:"Select a spa ritual and open the visible enquiry form. This does not confirm an appointment or submit personal details.",inputSchema:{type:"object",properties:{serviceId:{type:"string",enum:["calm","deep","aroma"]}},required:["serviceId"],additionalProperties:false},annotations:{readOnlyHint:false,untrustedContentHint:false},execute(input:unknown){const id=(input as {serviceId?:string})?.serviceId;const service=services.find(s=>s.id===id);if(!service) throw new Error("Choose a valid serviceId.");localStorage.setItem("spa-selection",service.id);window.location.href=`/${lang}/contact`;return {serviceId:service.id,status:"enquiry_started",appointmentConfirmed:false}}},{signal:lifecycle.signal})).catch(()=>undefined);
-    return ()=>lifecycle.abort();
-  },[lang]);
-  const choose=(s:typeof services[number])=>{setSelected(s); localStorage.setItem("spa-selection",s.id)};
-  const filtered=useMemo(()=>services.filter(s=>s.durations.some(d=>d.m===duration)&&(style===0||[s.moodEn,s.moodHi].includes(c.styles[style] as never))),[duration,style,c.styles]);
-  const to=(path:string)=>`/${lang}/${path}`; const otherPath=`/${other}/${route==="home"?"":route}`;
-
-  return <div className="site-shell">
-    <AnalyticsTracker/>
-    <div className="preview-ribbon"><span><Sparkles/> DESIGN PREVIEW</span><span>{lang==="hi"?"बिज़नेस विवरण अभी भरने हैं":"Business details still need configuration"}</span></div>
-    <header className="nav-wrap"><nav className="nav"><Link className="brand" href={`/${lang}`}><span className="brand-mark"><Leaf/></span><span><b>{business.name}</b><small>QUIET RITUALS</small></span></Link><div className="nav-links">{c.nav.map((n,i)=><Link key={n} className={route===c.paths[i]?"active":""} href={to(c.paths[i])}>{n}</Link>)}</div><div className="nav-actions"><Link className="lang" href={otherPath}>{lang==="hi"?"EN":"हिं"}</Link><ButtonLink href={to("contact")}>{lang==="hi"?"पूछताछ":"Enquire"}</ButtonLink><Sheet><SheetTrigger className="menu-btn" aria-label="Menu"><Menu/></SheetTrigger><SheetContent className="mobile-sheet"><SheetHeader><SheetTitle>{business.name}</SheetTitle><SheetDescription>{c.eyebrow}</SheetDescription></SheetHeader><div className="mobile-links">{c.nav.map((n,i)=><Link key={n} href={to(c.paths[i])}>{n}<ChevronRight/></Link>)}</div></SheetContent></Sheet></div></nav></header>
-    {route==="home"&&<Home lang={lang} c={c} duration={duration} setDuration={setDuration} style={style} setStyle={setStyle} filtered={filtered} choose={choose} to={to} runtime={runtime}/>} 
-    {route==="services"&&<Services lang={lang} c={c} duration={duration} setDuration={setDuration} style={style} setStyle={setStyle} filtered={filtered} choose={choose} runtime={runtime}/>} 
-    {route==="therapists"&&<Therapists lang={lang} runtime={runtime}/>} {route==="first-visit"&&<FirstVisit lang={lang}/>} {route==="about"&&<About lang={lang}/>} {route==="contact"&&<Contact lang={lang} runtime={runtime}/>} 
-    {["privacy","terms","refund"].includes(route)&&<Policy lang={lang} kind={route}/>} 
-    {route==="privacy"&&<section className="policy-disclosure"><span>ANALYTICS & ADVERTISING</span><h2>{lang==="hi"?"आपकी अनुमति के बिना कोई विज्ञापन ट्रैकिंग नहीं।":"No advertising tracking without your choice."}</h2><p>{lang==="hi"?"सहमति मिलने पर हम पेज विज़िट, रुकने का समय, ट्रैफ़िक स्रोत और कॉल/टेलीग्राम जैसे सामान्य क्लिक सहेजते हैं। IP को कच्चे रूप में नहीं रखते; रोज़ बदलने वाला hash उपयोग होता है। Meta Pixel और Google AdSense केवल ‘Allow all’ चुनने के बाद लोड होते हैं। फ़ॉर्म की व्यक्तिगत जानकारी विज्ञापन प्लेटफ़ॉर्म को नहीं भेजी जाती।":"With consent, we record page visits, time on site, traffic source and generic actions such as call or Telegram clicks. Raw IP addresses are not stored; a daily rotating hash is used. Meta Pixel and Google AdSense load only after “Allow all”. Personal enquiry details are never sent to advertising platforms."}</p></section>}
-    <Footer lang={lang} c={c} to={to}/>
-    {selected&&<div className="visit-summary"><button aria-label="Dismiss" onClick={()=>setSelected(null)}><X/></button><span>{c.summary}</span><strong>{lang==="hi"?selected.hi:selected.en}</strong><small>{selected.durations.map(d=>d.m).join(" / ")} {c.minutes} · {c.notBooking}</small><Link href={to("contact")}>{lang==="hi"?"पूछताछ करें":"Start enquiry"}<ChevronRight/></Link></div>}
-    <div className="mobile-tabbar"><Link className={route==="home"?"active":""} href={`/${lang}`}><HomeIcon/><span>{lang==="hi"?"होम":"Home"}</span></Link><Link className={route==="services"?"active":""} href={to("services")}><Sparkles/><span>{lang==="hi"?"रिचुअल":"Rituals"}</span></Link><Link className="enquire-orb" href={to("contact")} data-track="enquiry_start"><MessageCircle/></Link><Link className={route==="therapists"?"active":""} href={to("therapists")}><UserRound/><span>{lang==="hi"?"टीम":"Team"}</span></Link><a href={`tel:${runtime.settings.business_phone||business.phone}`}><Phone/><span>{c.call}</span></a></div>
-  </div>
+function telegramHref(value: string) {
+  const clean = value
+    .trim()
+    .replace(/^https?:\/\/(?:www\.)?/i, "")
+    .replace(/^(?:t\.me|telegram\.me)\//i, "")
+    .replace(/^@/, "")
+    .replace(/\/+$/, "");
+  return `https://t.me/${clean || "[TELEGRAM_USERNAME]"}`;
 }
 
-function displayTherapists(runtime:any){return runtime.therapists?.length?runtime.therapists:therapists.map((t,i)=>({id:t.id,name_en:t.name,name_hi:t.name,speciality_en:t.en,speciality_hi:t.hi,imageUrl:`/images/therapist-demo-${i+1}.png`}))}
+function TelegramLink({
+  href,
+  label,
+  className = "btn btn-telegram",
+  service,
+}: {
+  href: string;
+  label: string;
+  className?: string;
+  service?: string;
+}) {
+  return (
+    <a
+      className={className}
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      data-track="telegram_click"
+      data-service={service}
+      aria-label={`${label} — opens Telegram in a new tab`}
+    >
+      <MessageCircle />
+      <span>{label}</span>
+      <ArrowUpRight className="telegram-arrow" />
+    </a>
+  );
+}
 
-function Home({lang,c,duration,setDuration,style,setStyle,filtered,choose,to,runtime}:any){const team=displayTherapists(runtime),telegram=runtime.settings.telegram_username||business.telegram,telegramLabel=(runtime.settings[lang==="hi"?"telegram_cta_hi":"telegram_cta_en"]||c.telegram).slice(0,40);return <main>
-  <section className="hero"><Image src="/images/hero-spa.png" alt={lang==="hi"?"हरे और तांबे के रंगों वाला शांत, चित्रात्मक स्पा इंटीरियर":"Illustrative green and copper spa interior"} fill priority sizes="100vw"/><div className="hero-shade"/><div className="hero-orbit" aria-hidden="true"><LottieLight src="/breathe.json" autoplay loop/></div><div className="hero-copy reveal"><span className="eyebrow">{c.eyebrow}</span><h1>{c.title}</h1><p>{c.intro}</p><div className="hero-cta"><ButtonLink href={to("services")}>{c.explore}</ButtonLink><a className="btn btn-telegram" href={telegramHref(telegram)} target="_blank" rel="noreferrer" data-track="telegram_click"><MessageCircle/> {telegramLabel}</a><ButtonLink ghost className="hero-call" href={`tel:${runtime.settings.business_phone||business.phone}`}><Phone/> {c.call}</ButtonLink></div><div className="hero-trust"><span><Check/> {c.enquiryFree}</span><span><Check/> {c.notBooking}</span></div></div><div className="hero-card"><RitualIcon kind="aroma"/><span>60 {c.minutes}</span><strong>{lang==="hi"?"बॉटैनिकल अरोमा रिचुअल":"Botanical aroma ritual"}</strong><small>{c.illustrative}</small></div><div className="scroll-cue">SCROLL <i/></div></section>
-  <Explorer {...{lang,c,duration,setDuration,style,setStyle,filtered,choose,runtime}}/>
-  <section className="experience-bento section"><article className="bento-title"><span className="kicker">A SMARTER SPA JOURNEY</span><h2>{lang==="hi"?"शांत अनुभव। तेज़ इंटरफ़ेस।":"Calm experience. Sharp interface."}</h2><p>{lang==="hi"?"एक ऐसा वेलनेस अनुभव जो हर स्क्रीन पर निजी, स्पष्ट और सहज लगता है।":"A wellness journey that feels personal, transparent and effortless on every screen."}</p></article><article className="bento-lottie"><LottieLight src="/breathe.json" autoplay loop/><div><span>{lang==="hi"?"धीरे साँस लें":"Breathe slower"}</span><strong>04 · 06</strong></div></article><article className="bento-stat"><strong>0</strong><span>{lang==="hi"?"ऑनलाइन पेमेंट दबाव":"online payment pressure"}</span><small>{lang==="hi"?"सिर्फ़ पूछताछ और स्पष्ट पुष्टि":"Only enquiry and clear confirmation"}</small></article><article className="bento-path"><CalendarDays/><span>{lang==="hi"?"आपकी विज़िट":"Your visit"}</span><div><i/> Explore <i/> Enquire <i/> Confirm</div></article></section>
-  <section className="editorial section"><div className="editorial-copy"><span className="kicker">01 · RITUAL</span><h2>{lang==="hi"?"शरीर को विराम। मन को जगह।":"Give the body pause. Give the mind room."}</h2><p>{lang==="hi"?"हर ट्रीटमेंट के पहले समय, दबाव और पसंद स्पष्ट की जाती है। कोई जल्दबाज़ी नहीं, कोई छिपी शर्त नहीं।":"Every treatment begins with a clear conversation about time, pressure and preference. No rush, no hidden terms."}</p><Link className="text-link" href={to("services")}>{c.explore}<ArrowUpRight/></Link></div><div className="editorial-image"><Image src="/images/ritual-oils.png" alt={lang==="hi"?"तेल, लिनेन और पत्थरों की चित्रात्मक सज्जा":"Illustrative oils, linen and stones"} fill sizes="(max-width:800px) 100vw,50vw"/><span>{c.illustrative}</span></div></section>
-  <section className="dark-section section"><div className="section-head"><span className="kicker">02 · FIRST VISIT</span><h2>{c.first}</h2></div><div className="steps">{(lang==="hi"?[["01","पूछताछ","सेवा चुनें और छोटा फ़ॉर्म भेजें।"],["02","पुष्टि","स्टाफ उपलब्धता और रजिस्ट्रेशन समझाएगा।"],["03","आगमन","कन्फर्म समय पर आएँ—ऑनलाइन भुगतान नहीं।"]]:[["01","Enquire","Choose a ritual and send the short form."],["02","Confirm","Staff explains availability and registration."],["03","Arrive","Come at the confirmed time—no online payment."]]).map((s:any)=><article key={s[0]}><span>{s[0]}</span><h3>{s[1]}</h3><p>{s[2]}</p></article>)}</div><div className="fee-strip"><div><small>{c.fee}</small><strong>{runtime.settings.registration_fee||business.registrationFee}</strong></div><p>{lang==="hi"?`मान्यता: ${business.registrationValidity} · रिफंड नियम कॉन्फ़िगर करना बाकी है।`:`Validity: ${business.registrationValidity} · Refund terms still need configuration.`}</p><Check/></div></section>
-  <section className="section team"><div className="section-head"><span className="kicker">03 · PROFESSIONAL TEAM</span><h2>{c.team}</h2></div><div className="team-grid">{team.map((t:any,i:number)=><article key={t.id}><div className="portrait-photo"><Image src={t.imageUrl||`/images/therapist-demo-${i+1}.png`} alt="Illustrative therapist profile" fill sizes="(max-width:700px) 35vw,220px"/></div><div><h3>{lang==="hi"?t.name_hi:t.name_en}</h3><p>{lang==="hi"?t.speciality_hi:t.speciality_en}</p><small>{lang==="hi"?"AI चित्रात्मक प्रोफ़ाइल · लॉन्च से पहले असली सहमति वाली फ़ोटो लगाएँ":"AI illustrative profile · replace with a real consented portrait before launch"}</small></div></article>)}</div></section>
-  <section className="gallery-band"><Image src="/images/spa-threshold.png" alt={lang==="hi"?"शांत ट्रीटमेंट रूम का चित्रात्मक दृश्य":"Illustrative treatment room ambience"} fill sizes="100vw"/><div><span className="kicker">04 · AMBIENCE</span><h2>{c.gallery}</h2><p>{c.illustrative}</p></div></section>
-  <Faq lang={lang} c={c}/>
-  </main>}
+export default function SpaExperience({ route }: { route: string }) {
+  const [duration, setDuration] = useState(60);
+  const [style, setStyle] = useState(0);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [runtime, setRuntime] = useState<Runtime>({ settings: {}, therapists: [] });
 
-function Explorer({lang,c,duration,setDuration,style,setStyle,filtered,choose,runtime}:any){return <section className="explorer section"><div className="section-head"><span className="kicker">CURATED FOR YOUR TIME</span><h2>{c.find}</h2><p>{c.findSub}</p></div><div className="duration-tabs">{[30,60,90].map(x=><button key={x} onClick={()=>setDuration(x)} className={duration===x?"selected":""} aria-pressed={duration===x}><b>{x}</b><span>{c.minutes}</span></button>)}</div><div className="style-chips">{c.styles.map((x:string,i:number)=><button className={style===i?"selected":""} key={x} onClick={()=>setStyle(i)} aria-pressed={style===i}>{x}</button>)}</div><div className="ritual-grid">{filtered.map((s:any)=><article className={`ritual-card ritual-${s.id}`} key={s.id}><div className="ritual-photo"><Image src={s.image} alt={lang==="hi"?`${s.hi} के लिए प्रोफ़ेशनल थेरेपिस्ट का चित्रात्मक दृश्य`:`Illustrative professional therapist for ${s.en}`} fill sizes="(max-width:680px) 92vw, (max-width:980px) 46vw, 30vw"/></div><div className="ritual-content"><div className="ritual-top"><RitualIcon kind={s.id}/><span>{lang==="hi"?s.moodHi:s.moodEn}</span><Clock3/></div><h3>{lang==="hi"?s.hi:s.en}</h3><p>{lang==="hi"?`दबाव: ${s.pressureHi}`:`Pressure: ${s.pressureEn}`}</p><div className="price-line"><span>{duration} {c.minutes}</span><strong>{runtime.settings[`price_${s.id}_${duration}`]||s.durations.find((d:any)=>d.m===duration)?.p}</strong></div><button data-track="service_view" data-service={s.id} onClick={()=>choose(s)}>{c.select}<ChevronRight/></button></div></article>)}</div></section>}
+  useEffect(() => {
+    fetch("/api/public-config")
+      .then((response) => response.json())
+      .then(setRuntime)
+      .catch(() => undefined);
+  }, []);
 
-function Services(props:any){return <main className="inner"><PageIntro eyebrow="TREATMENT MENU" title={props.lang==="hi"?"जिस सुकून की ज़रूरत है, उसे चुनें।":"Choose the kind of quiet you need."} text={props.lang==="hi"?"समय, दबाव और अनुभव के अनुसार फ़िल्टर करें। लाइव कीमतें एडमिन द्वारा अपडेट की जा सकती हैं।":"Filter by time, pressure and experience. Live prices can be updated by the admin."}/><Explorer {...props}/></main>}
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReducedMotion(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
-function Therapists({lang,runtime}:{lang:Lang;runtime:any}){const team=displayTherapists(runtime);return <main className="inner"><PageIntro eyebrow="PROFESSIONAL TEAM" title={lang==="hi"?"कौशल पहले। हमेशा।":"Skill comes first. Always."} text={lang==="hi"?"प्रोफ़ाइल केवल वास्तविक अनुभव, भाषा और सेवा विशेषज्ञता पर आधारित होगी।":"Profiles are based only on genuine experience, languages and service specialities."}/><section className="profile-list section">{team.map((t:any,i:number)=><article key={t.id}><div className="profile-photo"><Image src={t.imageUrl||`/images/therapist-demo-${i+1}.png`} alt="Illustrative professional therapist profile" fill sizes="(max-width:700px) 100vw,420px"/></div><div><span className="kicker">THERAPIST PROFILE</span><h2>{lang==="hi"?t.name_hi:t.name_en}</h2><p>{lang==="hi"?t.speciality_hi:t.speciality_en}</p><dl><div><dt>{lang==="hi"?"अनुभव":"Experience"}</dt><dd>[EXPERIENCE]</dd></div><div><dt>{lang==="hi"?"सेवाएँ":"Assigned services"}</dt><dd>[ASSIGNED_SERVICES]</dd></div></dl><small>{lang==="hi"?"यह AI चित्रात्मक प्रोफ़ाइल है—लॉन्च से पहले वास्तविक, सहमति वाली फ़ोटो जोड़ें।":"This is an AI illustrative profile—add a real consented portrait before launch."}</small></div></article>)}</section></main>}
+  useEffect(() => {
+    if (reducedMotion) return;
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add("in-view")),
+      { threshold: 0.1 },
+    );
+    document.querySelectorAll(".section,.gallery-band,.page-intro,.telegram-band").forEach((element) => {
+      element.classList.add("scroll-reveal");
+      observer.observe(element);
+    });
+    return () => observer.disconnect();
+  }, [route, reducedMotion]);
 
-function FirstVisit({lang}:{lang:Lang}){const data=lang==="hi"?[["सेवा चुनें","कीमत और अवधि देखें।"],["पूछताछ भेजें","नाम, उम्र और पसंद—कोई आईडी या भुगतान नहीं।"],["स्टाफ से पुष्टि","वास्तविक उपलब्धता और रजिस्ट्रेशन समझें।"],["आएँ और आराम करें","केवल कन्फर्म समय को अपॉइंटमेंट मानें।"]]:[["Choose a service","Review its duration and price."],["Send an enquiry","Name, age and preference—no ID or payment."],["Staff confirms","Understand real availability and registration."],["Arrive and exhale","Only a confirmed time is an appointment."]];return <main className="inner"><PageIntro eyebrow="FIRST VISIT" title={lang==="hi"?"शुरू से साफ़, अंत तक सहज।":"Clear from the start. Calm all the way through."}/><section className="timeline section">{data.map((x,i)=><article key={x[0]}><b>0{i+1}</b><div><h2>{x[0]}</h2><p>{x[1]}</p></div></article>)}</section><section className="registration-panel"><span>REGISTRATION</span><h2>{business.registrationFee}</h2><p>{lang==="hi"?`मान्यता ${business.registrationValidity}। इसमें क्या शामिल है और रिफंड पात्रता लॉन्च से पहले भरें।`:`Validity ${business.registrationValidity}. Complete inclusions and refund eligibility before launch.`}</p><strong>{lang==="hi"?"पूछताछ भेजना निःशुल्क है।":"Submitting an enquiry is free."}</strong></section></main>}
+  const filtered = useMemo(
+    () =>
+      services.filter(
+        (service) =>
+          service.durations.some((item) => item.m === duration) &&
+          (style === 0 || service.moodEn === content.styles[style]),
+      ),
+    [duration, style],
+  );
 
-function About({lang}:{lang:Lang}){return <main className="inner"><PageIntro eyebrow="ABOUT · HYGIENE" title={lang==="hi"?"वेलनेस जो शांत भी है, स्पष्ट भी।":"Wellness that feels calm—and stays clear."}/><section className="about-grid section"><div className="about-image"><Image src="/images/spa-threshold.png" alt="Illustrative spa ambience" fill sizes="50vw"/></div><div><span className="kicker">OUR STANDARD</span><h2>{lang==="hi"?"दिखावे से पहले देखभाल।":"Care before theatre."}</h2><p>{lang==="hi"?"यहाँ वास्तविक ब्रांड कहानी, सुविधा विवरण और सत्यापित स्वच्छता प्रक्रिया जोड़ें। कोई काल्पनिक प्रमाणपत्र या दावा नहीं।":"Add the real brand story, facility details and verified hygiene process here. No invented certifications or claims."}</p><ul>{(lang==="hi"?["हर क्लाइंट के लिए ताज़ा लिनेन","ट्रीटमेंट के बीच साफ़-सफ़ाई","सम्मानपूर्ण प्रोफ़ेशनल आचरण"]:["Fresh linen for every client","Cleaning between treatments","Respectful professional conduct"]).map(x=><li key={x}><Check/>{x}</li>)}</ul></div></section></main>}
+  const to = (path: string) => `/en/${path}`;
+  const siteName = (runtime.settings.site_name || business.name).slice(0, 80);
+  const telegram = runtime.settings.telegram_username || business.telegram;
+  const telegramUrl = telegramHref(telegram);
+  const telegramLabel = (runtime.settings.telegram_cta_en || content.telegram).slice(0, 40);
+  const knownRoute = ["home", "services", "therapists", "first-visit", "about", "contact", "privacy", "terms", "refund"].includes(route);
 
-function Contact({lang,runtime}:{lang:Lang;runtime:any}){const phone=runtime.settings.business_phone||business.phone,telegram=runtime.settings.telegram_username||business.telegram,telegramHref=telegram.startsWith("http")?telegram:`https://t.me/${telegram.replace(/^@/,"")}`;const [state,setState]=useState<"idle"|"loading"|"done"|"error">("idle"),[message,setMessage]=useState(""),[ref,setRef]=useState(""); async function submit(e:React.FormEvent<HTMLFormElement>){e.preventDefault();window.dispatchEvent(new CustomEvent("spa-analytics",{detail:{name:"enquiry_start"}}));setState("loading");setMessage("");const fd=new FormData(e.currentTarget);const body=Object.fromEntries(fd);try{const res=await fetch("/api/enquiry",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({...body,age:Number(body.age),consent:body.consent==="on",marketing:body.marketing==="on",idempotencyKey:crypto.randomUUID()})});const data=await res.json();if(!res.ok)throw new Error(data.error);setRef(data.reference);setState("done");window.dispatchEvent(new CustomEvent("spa-analytics",{detail:{name:"enquiry_success"}}))}catch(err){setMessage(err instanceof Error?err.message:"Unable to submit");setState("error")}}return <main className="inner contact-page"><PageIntro eyebrow="CONTACT · ENQUIRY" title={lang==="hi"?"अपनी पसंद बताएँ। आगे हम समझाएँगे।":"Tell us what feels right. We’ll explain the rest."} text={lang==="hi"?"यह पूछताछ है—कन्फर्म अपॉइंटमेंट नहीं। कोई ऑनलाइन भुगतान नहीं।":"This is an enquiry—not a confirmed appointment. No online payment."}/>{state==="done"?<section className="success-card"><span><Check/></span><small>{lang==="hi"?"पूछताछ रेफ़रेंस":"ENQUIRY REFERENCE"}</small><h2>{ref}</h2><p>{lang==="hi"?"स्टाफ उपलब्धता की पुष्टि करेगा।":"Staff will confirm actual availability."}</p><div><a className="btn btn-solid" href={`tel:${phone}`}><Phone/> {lang==="hi"?"अभी कॉल करें":"Call now"}</a><button className="btn btn-ghost" onClick={()=>navigator.clipboard.writeText(ref)}><Copy/> {lang==="hi"?"रेफ़रेंस कॉपी करें":"Copy reference"}</button></div></section>:<form onSubmit={submit} className="enquiry-form"><div className="form-grid"><label>{lang==="hi"?"नाम":"Name"}<input name="name" required minLength={2}/></label><label>{lang==="hi"?"उम्र":"Age"}<input name="age" type="number" min="18" max="100" required/></label><label>{lang==="hi"?"लिंग":"Gender"}<select name="gender" required defaultValue="prefer-not"><option value="prefer-not">{lang==="hi"?"नहीं बताना चाहते":"Prefer not to say"}</option><option value="female">{lang==="hi"?"महिला":"Female"}</option><option value="male">{lang==="hi"?"पुरुष":"Male"}</option><option value="nonbinary">{lang==="hi"?"अन्य":"Non-binary"}</option></select></label><label>{lang==="hi"?"सेवा":"Service"}<select name="service" required>{services.map(s=><option key={s.id} value={s.id}>{lang==="hi"?s.hi:s.en}</option>)}</select></label><label className="wide">{lang==="hi"?"थेरेपिस्ट पसंद (वैकल्पिक)":"Therapist preference (optional)"}<select name="therapist"><option value="">{lang==="hi"?"कोई विशेष पसंद नहीं":"No preference"}</option>{therapists.map(t=><option key={t.id}>{t.name}</option>)}</select></label><label className="honeypot">Website<input name="website" tabIndex={-1} autoComplete="off"/></label></div><label className="check-row"><input type="checkbox" name="consent" required/>{lang==="hi"?"मैं अपनी पूछताछ का जवाब पाने के लिए इस जानकारी के उपयोग की सहमति देता/देती हूँ।":"I consent to this information being used to respond to my enquiry."}</label><label className="check-row"><input type="checkbox" name="marketing"/>{lang==="hi"?"वैकल्पिक: मुझे सामान्य अपडेट भेजें।":"Optional: send me general updates."}</label>{message&&<p role="alert" className="error">{message}</p>}<button disabled={state==="loading"} className="btn btn-solid submit">{state==="loading"?(lang==="hi"?"सहेज रहे हैं…":"Saving…"):(lang==="hi"?"निःशुल्क पूछताछ भेजें":"Send free enquiry")}</button></form>}<aside className="contact-details"><a href={`tel:${phone}`}><Phone/><span>{phone}</span></a><a href={telegramHref} target="_blank" rel="noreferrer"><MessageCircle/><span>{telegram}</span></a><div><MapPin/><span>{runtime.settings.address||business.address}, {business.city}</span></div><div><Clock3/><span>{runtime.settings.opening_hours||business.hours}</span></div></aside></main>}
+  return (
+    <div className="site-shell">
+      <AnalyticsTracker />
+      <div className="scroll-progress" aria-hidden="true" />
 
-function Policy({lang,kind}:{lang:Lang;kind:string}){const titles:any={privacy:lang==="hi"?"गोपनीयता नीति":"Privacy Policy",terms:lang==="hi"?"सेवा की शर्तें":"Terms of Service",refund:lang==="hi"?"कैंसलेशन और रिफंड":"Cancellation & Refund"};return <main className="policy inner"><PageIntro eyebrow="DRAFT POLICY · COMPLETE BEFORE LAUNCH" title={titles[kind]}/><article>{kind==="privacy"?<><h2>{lang==="hi"?"हम क्या लेते हैं":"What we collect"}</h2><p>{lang==="hi"?"पूछताछ के लिए नाम, उम्र, लिंग, सेवा और वैकल्पिक थेरेपिस्ट पसंद। आधार, आईडी फ़ोटो, मेडिकल या भुगतान जानकारी नहीं।":"For enquiries: name, age, gender, service and optional therapist preference. No Aadhaar, ID photos, medical or payment information."}</p><h2>{lang==="hi"?"उपयोग और संग्रह":"Use and retention"}</h2><p>{lang==="hi"?`सिर्फ़ जवाब देने के लिए। डिफ़ॉल्ट रिटेंशन ${business.retentionDays} दिन; वास्तविक संपर्क और deletion प्रक्रिया भरें।`:`Only to respond. Default retention is ${business.retentionDays} days; add the real privacy contact and deletion process.`}</p></>:kind==="terms"?<><h2>{lang==="hi"?"पूछताछ, बुकिंग नहीं":"Enquiry, not a booking"}</h2><p>{lang==="hi"?"वेबसाइट फ़ॉर्म भेजना निःशुल्क है और अपॉइंटमेंट कन्फ़र्म नहीं करता। स्टाफ अलग से उपलब्धता और शुल्क समझाता है।":"Submitting the website form is free and does not confirm an appointment. Staff separately explains availability and fees."}</p><h2>{lang==="hi"?"प्रोफ़ेशनल आचरण":"Professional conduct"}</h2><p>{lang==="hi"?"स्पा और ग्राहक दोनों से सम्मानपूर्ण व्यवहार अपेक्षित है।":"Respectful conduct is expected from the spa and every customer."}</p></>:<><h2>{lang==="hi"?"अलग-अलग शुल्क, अलग नियम":"Separate fees, separate terms"}</h2><p>{lang==="hi"?"रजिस्ट्रेशन और सेवा रिफंड नियम अलग बताए जाएँगे। वास्तविक कैंसलेशन समय, नो-शो नियम, स्पा कैंसलेशन और प्रोसेसिंग समय भरें।":"Registration and service refund rules must be stated separately. Complete the actual cancellation window, no-show, spa cancellation and processing timeline."}</p><p className="policy-alert">[REFUND_TERMS_REQUIRED_BEFORE_LAUNCH]</p></>}</article></main>}
+      <header className="nav-wrap">
+        <nav className="nav" aria-label="Primary navigation">
+          <Link className="brand" href="/en">
+            <span className="brand-mark"><Leaf /></span>
+            <span><b>{siteName}</b><small>PRIVATE WELLNESS</small></span>
+          </Link>
+          <div className="nav-links">
+            {content.nav.map((item, index) => (
+              <Link key={item} className={route === content.paths[index] ? "active" : ""} href={to(content.paths[index])}>
+                {item}
+              </Link>
+            ))}
+          </div>
+          <div className="nav-actions">
+            <TelegramLink href={telegramUrl} label={telegramLabel} />
+            <Sheet>
+              <SheetTrigger className="menu-btn" aria-label="Open navigation"><Menu /></SheetTrigger>
+              <SheetContent className="mobile-sheet">
+                <SheetHeader>
+                  <SheetTitle>{siteName}</SheetTitle>
+                  <SheetDescription>{content.eyebrow}</SheetDescription>
+                </SheetHeader>
+                <div className="mobile-links">
+                  {content.nav.map((item, index) => <Link key={item} href={to(content.paths[index])}>{item}<ChevronRight /></Link>)}
+                  <TelegramLink href={telegramUrl} label={telegramLabel} className="mobile-telegram" />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </nav>
+      </header>
 
-function PageIntro({eyebrow,title,text}:{eyebrow:string;title:string;text?:string}){return <section className="page-intro"><span className="eyebrow">{eyebrow}</span><h1>{title}</h1>{text&&<p>{text}</p>}<i/></section>}
-function Faq({lang,c}:{lang:Lang;c:any}){const qs=lang==="hi"?[["क्या वेबसाइट पर भुगतान होता है?","नहीं। वेबसाइट पर कोई पेमेंट या QR कोड नहीं है।"],["क्या पूछताछ से अपॉइंटमेंट कन्फ़र्म हो जाता है?","नहीं। स्टाफ वास्तविक उपलब्धता की पुष्टि करता है।"],["क्या मैं थेरेपिस्ट चुन सकता/सकती हूँ?","पसंद बता सकते हैं; यह उपलब्धता पर निर्भर है।"]]:[["Can I pay on the website?","No. There is no payment or QR code on the website."],["Does an enquiry confirm my appointment?","No. Staff confirms actual availability separately."],["Can I choose a therapist?","You can share a preference; it depends on availability."]];return <section className="faq section"><div className="section-head"><span className="kicker">FAQ</span><h2>{c.faq}</h2></div><Accordion type="single" collapsible>{qs.map((q,i)=><AccordionItem value={String(i)} key={q[0]}><AccordionTrigger>{q[0]}</AccordionTrigger><AccordionContent>{q[1]}</AccordionContent></AccordionItem>)}</Accordion></section>}
-function Footer({lang,c,to}:{lang:Lang;c:any;to:(x:string)=>string}){return <footer><div className="footer-brand"><Leaf/><h2>{business.name}</h2><p>{lang==="hi"?"शांत, स्पष्ट और प्रोफ़ेशनल वेलनेस।":"Quiet, transparent, professional wellness."}</p></div><div><b>{lang==="hi"?"जानकारी":"Information"}</b><Link href={to("services")}>{c.nav[0]}</Link><Link href={to("first-visit")}>{c.nav[2]}</Link><Link href={to("contact")}>{c.nav[4]}</Link></div><div><b>{lang==="hi"?"नीतियाँ":"Policies"}</b><Link href={to("privacy")}>{lang==="hi"?"गोपनीयता":"Privacy"}</Link><Link href={to("terms")}>{lang==="hi"?"शर्तें":"Terms"}</Link><Link href={to("refund")}>{lang==="hi"?"कैंसलेशन और रिफंड":"Cancellation & Refund"}</Link><button className="footer-cookie" onClick={()=>window.dispatchEvent(new Event("open-cookie-preferences"))}>{lang==="hi"?"कुकी पसंद":"Cookie preferences"}</button></div><div><b>{business.city}</b><span>{business.address}</span><span>{business.hours}</span></div><p className="footer-note">{c.footer}</p></footer>}
+      {(!knownRoute || route === "home") && (
+        <Home
+          duration={duration}
+          setDuration={setDuration}
+          style={style}
+          setStyle={setStyle}
+          filtered={filtered}
+          runtime={runtime}
+          telegramUrl={telegramUrl}
+          telegramLabel={telegramLabel}
+          reducedMotion={reducedMotion}
+        />
+      )}
+      {route === "services" && (
+        <Services
+          duration={duration}
+          setDuration={setDuration}
+          style={style}
+          setStyle={setStyle}
+          filtered={filtered}
+          runtime={runtime}
+          telegramUrl={telegramUrl}
+          telegramLabel={telegramLabel}
+        />
+      )}
+      {route === "therapists" && <Therapists runtime={runtime} telegramUrl={telegramUrl} telegramLabel={telegramLabel} />}
+      {route === "first-visit" && <FirstVisit runtime={runtime} telegramUrl={telegramUrl} telegramLabel={telegramLabel} />}
+      {route === "about" && <About telegramUrl={telegramUrl} telegramLabel={telegramLabel} />}
+      {route === "contact" && <TelegramContact runtime={runtime} telegramUrl={telegramUrl} telegramLabel={telegramLabel} />}
+      {["privacy", "terms", "refund"].includes(route) && <Policy kind={route} />}
+      {route === "privacy" && (
+        <section className="policy-disclosure">
+          <span>ANALYTICS & ADVERTISING</span>
+          <h2>No advertising tracking without your choice.</h2>
+          <p>With consent, we record page visits, time on site, traffic source and generic actions such as Telegram clicks. Raw IP addresses are never stored; a daily rotating hash is used. Meta Pixel and Google AdSense load only after “Allow all”.</p>
+        </section>
+      )}
+
+      <Footer siteName={siteName} to={to} runtime={runtime} telegramUrl={telegramUrl} telegramLabel={telegramLabel} />
+      <TelegramLink href={telegramUrl} label={telegramLabel} className="floating-telegram" />
+    </div>
+  );
+}
+
+function displayTherapists(runtime: Runtime) {
+  return runtime.therapists?.length
+    ? runtime.therapists
+    : therapists.map((therapist, index) => ({
+        id: therapist.id,
+        name_en: therapist.name,
+        speciality_en: therapist.en,
+        imageUrl: `/images/therapist-demo-${index + 1}.webp`,
+      }));
+}
+
+function Home({
+  duration,
+  setDuration,
+  style,
+  setStyle,
+  filtered,
+  runtime,
+  telegramUrl,
+  telegramLabel,
+  reducedMotion,
+}: {
+  duration: number;
+  setDuration: (value: number) => void;
+  style: number;
+  setStyle: (value: number) => void;
+  filtered: typeof services[number][];
+  runtime: Runtime;
+  telegramUrl: string;
+  telegramLabel: string;
+  reducedMotion: boolean;
+}) {
+  const team = displayTherapists(runtime);
+  return (
+    <main>
+      <section className="hero">
+        <Image src="/images/hero-spa.webp" alt="Serene green and copper spa interior" fill priority sizes="100vw" />
+        <div className="hero-shade" />
+        <div className="hero-orbit" aria-hidden="true"><LottieLight src="/breathe.json" autoplay={!reducedMotion} loop={!reducedMotion} /></div>
+        <div className="hero-motes" aria-hidden="true"><i /><i /><i /></div>
+        <div className="hero-copy reveal">
+          <span className="eyebrow">{content.eyebrow}</span>
+          <h1>{content.title}</h1>
+          <p>{content.intro}</p>
+          <div className="hero-cta"><TelegramLink href={telegramUrl} label={telegramLabel} className="btn btn-telegram hero-telegram" /></div>
+          <div className="hero-trust">
+            <span><ShieldCheck /> No user login. Direct private chat.</span>
+            <span><Check /> Clear prices before you arrive.</span>
+          </div>
+        </div>
+        <div className="hero-card">
+          <RitualIcon kind="aroma" />
+          <span>TAILORED TO YOUR PACE</span>
+          <strong>30 · 60 · 90 minutes</strong>
+          <small>Choose a ritual, then confirm availability directly on Telegram.</small>
+        </div>
+        <div className="scroll-cue">SCROLL <i /></div>
+      </section>
+
+      <MotionTicker />
+      <Explorer {...{ duration, setDuration, style, setStyle, filtered, runtime, telegramUrl, telegramLabel }} />
+
+      <section className="experience-bento section">
+        <article className="bento-title"><span className="kicker">A SMARTER SPA JOURNEY</span><h2>Calm experience. Sharp interface.</h2><p>A wellness journey that feels personal, transparent and effortless on every screen.</p></article>
+        <article className="bento-lottie"><LottieLight src="/breathe.json" autoplay={!reducedMotion} loop={!reducedMotion} /><div><span>Breathe slower</span><strong>04 · 06</strong></div></article>
+        <article className="bento-stat"><strong>1</strong><span>simple way to connect</span><small>Every primary action opens Telegram.</small></article>
+        <article className="bento-path"><CalendarDays /><span>Your visit</span><div><i /> Discover <i /> Telegram <i /> Confirm</div></article>
+      </section>
+
+      <section className="editorial section">
+        <div className="editorial-copy"><span className="kicker">01 · RITUAL</span><h2>Give the body pause. Give the mind room.</h2><p>Every treatment begins with a clear conversation about time, pressure and preference. No rush, no hidden terms.</p><TelegramLink href={telegramUrl} label="Discuss your ritual" className="text-link telegram-text-link" /></div>
+        <div className="editorial-image"><Image src="/images/ritual-oils.webp" alt="Spa oils, linen and smooth stones" fill sizes="(max-width:800px) 100vw,50vw" /><span>{content.illustrative}</span></div>
+      </section>
+
+      <section className="dark-section section">
+        <div className="section-head"><span className="kicker">02 · FIRST VISIT</span><h2>{content.first}</h2></div>
+        <div className="steps">{[
+          ["01", "Open Telegram", "Tap any blue button and start a private conversation."],
+          ["02", "Confirm", "Share the ritual and time you prefer; staff confirms availability."],
+          ["03", "Arrive", "Come at the confirmed time—no website account or online payment."],
+        ].map((step) => <article key={step[0]}><span>{step[0]}</span><h3>{step[1]}</h3><p>{step[2]}</p></article>)}</div>
+        <div className="fee-strip"><div><small>{content.fee}</small><strong>{runtime.settings.registration_fee || business.registrationFee}</strong></div><p>Validity and refund terms are explained clearly before confirmation.</p><Check /></div>
+      </section>
+
+      <section className="section team">
+        <div className="section-head"><span className="kicker">03 · PROFESSIONAL TEAM</span><h2>{content.team}</h2></div>
+        <div className="team-grid">{team.map((therapist, index) => <article key={String(therapist.id)}><div className="portrait-photo"><Image src={String(therapist.imageUrl || `/images/therapist-demo-${index + 1}.webp`)} alt="Professional therapist profile" fill sizes="(max-width:700px) 35vw,220px" /></div><div><h3>{String(therapist.name_en || "Therapist")}</h3><p>{String(therapist.speciality_en || "Professional massage care")}</p><small>Illustrative profile · update from the admin dashboard</small></div></article>)}</div>
+      </section>
+
+      <TelegramBand href={telegramUrl} label={telegramLabel} />
+
+      <section className="gallery-band"><Image src="/images/spa-threshold.webp" alt="Serene spa treatment room" fill sizes="100vw" /><div><span className="kicker">04 · AMBIENCE</span><h2>{content.gallery}</h2><p>{content.illustrative}</p></div></section>
+      <Faq />
+    </main>
+  );
+}
+
+function MotionTicker() {
+  const phrase = ["PRIVATE WELLNESS", "TELEGRAM FIRST", "CLEAR PRICING", "PROFESSIONAL CARE"];
+  return <div className="motion-ticker" aria-label="Private wellness, Telegram first, clear pricing, professional care"><div>{[...phrase, ...phrase].map((item, index) => <span key={`${item}-${index}`}><i />{item}</span>)}</div></div>;
+}
+
+function Explorer({
+  duration,
+  setDuration,
+  style,
+  setStyle,
+  filtered,
+  runtime,
+  telegramUrl,
+  telegramLabel,
+}: {
+  duration: number;
+  setDuration: (value: number) => void;
+  style: number;
+  setStyle: (value: number) => void;
+  filtered: typeof services[number][];
+  runtime: Runtime;
+  telegramUrl: string;
+  telegramLabel: string;
+}) {
+  return <section className="explorer section">
+    <div className="section-head"><span className="kicker">CURATED FOR YOUR TIME</span><h2>{content.find}</h2><p>{content.findSub}</p></div>
+    <div className="duration-tabs">{[30, 60, 90].map((value) => <button key={value} onClick={() => setDuration(value)} className={duration === value ? "selected" : ""} aria-pressed={duration === value}><b>{value}</b><span>{content.minutes}</span></button>)}</div>
+    <div className="style-chips">{content.styles.map((item, index) => <button className={style === index ? "selected" : ""} key={item} onClick={() => setStyle(index)} aria-pressed={style === index}>{item}</button>)}</div>
+    <div className="ritual-grid">{filtered.map((service) => <article className={`ritual-card ritual-${service.id}`} key={service.id}>
+      <div className="ritual-photo"><Image src={service.image} alt={`Professional therapist for ${service.en}`} fill sizes="(max-width:680px) 92vw, (max-width:980px) 46vw, 30vw" /></div>
+      <div className="ritual-content">
+        <div className="ritual-top"><RitualIcon kind={service.id} /><span>{service.moodEn}</span><Clock3 /></div>
+        <h3>{service.en}</h3><p>Pressure: {service.pressureEn}</p>
+        <div className="price-line"><span>{duration} {content.minutes}</span><strong>{runtime.settings[`price_${service.id}_${duration}`] || service.durations.find((item) => item.m === duration)?.p}</strong></div>
+        <TelegramLink href={telegramUrl} label={`${telegramLabel} about this ritual`} className="ritual-telegram" service={service.id} />
+      </div>
+    </article>)}</div>
+  </section>;
+}
+
+function Services(props: Parameters<typeof Explorer>[0]) {
+  return <main className="inner"><PageIntro eyebrow="TREATMENT MENU" title="Choose the kind of quiet you need." text="Filter by time, pressure and experience. Prices can be updated instantly from the admin dashboard." /><Explorer {...props} /><TelegramBand href={props.telegramUrl} label={props.telegramLabel} /></main>;
+}
+
+function Therapists({ runtime, telegramUrl, telegramLabel }: { runtime: Runtime; telegramUrl: string; telegramLabel: string }) {
+  const team = displayTherapists(runtime);
+  return <main className="inner"><PageIntro eyebrow="PROFESSIONAL TEAM" title="Skill comes first. Always." text="Profiles focus on experience, language and service specialities—and can be updated by the admin." /><section className="profile-list section">{team.map((therapist, index) => <article key={String(therapist.id)}><div className="profile-photo"><Image src={String(therapist.imageUrl || `/images/therapist-demo-${index + 1}.webp`)} alt="Professional therapist profile" fill sizes="(max-width:700px) 100vw,420px" /></div><div><span className="kicker">THERAPIST PROFILE</span><h2>{String(therapist.name_en || "Therapist")}</h2><p>{String(therapist.speciality_en || "Professional massage care")}</p><dl><div><dt>Approach</dt><dd>Respectful, professional care</dd></div><div><dt>Availability</dt><dd>Confirm directly on Telegram</dd></div></dl><TelegramLink href={telegramUrl} label={telegramLabel} /></div></article>)}</section></main>;
+}
+
+function FirstVisit({ runtime, telegramUrl, telegramLabel }: { runtime: Runtime; telegramUrl: string; telegramLabel: string }) {
+  const steps = [["Choose a service", "Review duration and live price."], ["Open Telegram", "Start a private chat—no account or form."], ["Staff confirms", "Agree on real availability and registration."], ["Arrive and exhale", "Only a confirmed time is an appointment."]];
+  return <main className="inner"><PageIntro eyebrow="FIRST VISIT" title="Clear from the start. Calm all the way through." /><section className="timeline section">{steps.map((item, index) => <article key={item[0]}><b>0{index + 1}</b><div><h2>{item[0]}</h2><p>{item[1]}</p></div></article>)}</section><section className="registration-panel"><span>REGISTRATION</span><h2>{runtime.settings.registration_fee || business.registrationFee}</h2><p>Validity, inclusions and refund eligibility are explained before your visit is confirmed.</p><TelegramLink href={telegramUrl} label={telegramLabel} /></section></main>;
+}
+
+function About({ telegramUrl, telegramLabel }: { telegramUrl: string; telegramLabel: string }) {
+  return <main className="inner"><PageIntro eyebrow="ABOUT · HYGIENE" title="Wellness that feels calm—and stays clear." /><section className="about-grid section"><div className="about-image"><Image src="/images/spa-threshold.webp" alt="Serene spa ambience" fill sizes="(max-width:700px) 100vw,50vw" /></div><div><span className="kicker">OUR STANDARD</span><h2>Care before theatre.</h2><p>A considered, professional experience built around clarity, comfort and respectful communication.</p><ul>{["Fresh linen for every client", "Cleaning between treatments", "Respectful professional conduct"].map((item) => <li key={item}><Check />{item}</li>)}</ul><TelegramLink href={telegramUrl} label={telegramLabel} /></div></section></main>;
+}
+
+function TelegramContact({ runtime, telegramUrl, telegramLabel }: { runtime: Runtime; telegramUrl: string; telegramLabel: string }) {
+  return <main className="inner telegram-contact"><PageIntro eyebrow="DIRECT CONTACT" title="One tap. A private conversation." text="No website form and no user account. Tell the team what you need directly on Telegram." /><section className="telegram-contact-card section"><div className="telegram-contact-icon"><Send /></div><span>TELEGRAM-FIRST BOOKING</span><h2>Ready when you are.</h2><p>Share your preferred ritual, duration and time. The team will confirm availability before you travel.</p><TelegramLink href={telegramUrl} label={telegramLabel} className="btn btn-telegram telegram-contact-button" /><div className="contact-meta"><span><MapPin />{runtime.settings.address || business.address}, {business.city}</span><span><Clock3 />{runtime.settings.opening_hours || business.hours}</span></div></section></main>;
+}
+
+function TelegramBand({ href, label }: { href: string; label: string }) {
+  return <section className="telegram-band"><div><span><Sparkles /> PRIVATE · DIRECT · SIMPLE</span><h2>Your next quiet moment starts with one message.</h2></div><TelegramLink href={href} label={label} className="telegram-band-button" /></section>;
+}
+
+function Policy({ kind }: { kind: string }) {
+  const titles: Record<string, string> = { privacy: "Privacy Policy", terms: "Terms of Service", refund: "Cancellation & Refund" };
+  return <main className="policy inner"><PageIntro eyebrow="POLICY" title={titles[kind]} /><article>{kind === "privacy" ? <><h2>What we collect</h2><p>The public website does not ask visitors to create an account. With consent, anonymous analytics may record page visits, session duration, traffic source and generic Telegram clicks.</p><h2>Use and retention</h2><p>Analytics uses a daily rotating visitor hash; raw IP addresses are not stored. Telegram conversations are handled under Telegram’s own policies.</p></> : kind === "terms" ? <><h2>Conversation, not a confirmed booking</h2><p>Opening Telegram or sending a message does not confirm an appointment. Staff confirms availability, pricing and registration separately.</p><h2>Professional conduct</h2><p>Respectful conduct is expected from the spa and every customer.</p></> : <><h2>Separate fees, clear terms</h2><p>Registration and service refund terms are explained before an appointment is confirmed. Ask the team on Telegram for the current cancellation window and no-show policy.</p></>}</article></main>;
+}
+
+function PageIntro({ eyebrow, title, text }: { eyebrow: string; title: string; text?: string }) {
+  return <section className="page-intro"><span className="eyebrow">{eyebrow}</span><h1>{title}</h1>{text && <p>{text}</p>}<i /></section>;
+}
+
+function Faq() {
+  const questions = [["Can I pay on the website?", "No. The public site has no payment or QR code."], ["Does a Telegram message confirm my appointment?", "No. Staff confirms actual availability and timing separately."], ["Do I need an account?", "No. Visitors browse freely and continue directly on Telegram."], ["Can I choose a therapist?", "You can share a preference on Telegram; it depends on availability."]];
+  return <section className="faq section"><div className="section-head"><span className="kicker">FAQ</span><h2>{content.faq}</h2></div><Accordion type="single" collapsible>{questions.map((item, index) => <AccordionItem value={String(index)} key={item[0]}><AccordionTrigger>{item[0]}</AccordionTrigger><AccordionContent>{item[1]}</AccordionContent></AccordionItem>)}</Accordion></section>;
+}
+
+function Footer({ siteName, to, runtime, telegramUrl, telegramLabel }: { siteName: string; to: (path: string) => string; runtime: Runtime; telegramUrl: string; telegramLabel: string }) {
+  return <footer><div className="footer-brand"><Leaf /><h2>{siteName}</h2><p>Quiet, transparent, professional wellness.</p><TelegramLink href={telegramUrl} label={telegramLabel} className="footer-telegram" /></div><div><b>Explore</b><Link href={to("services")}>Treatments</Link><Link href={to("therapists")}>Therapists</Link><Link href={to("first-visit")}>First visit</Link></div><div><b>Policies</b><Link href={to("privacy")}>Privacy</Link><Link href={to("terms")}>Terms</Link><Link href={to("refund")}>Cancellation & Refund</Link><button className="footer-cookie" onClick={() => window.dispatchEvent(new Event("open-cookie-preferences"))}>Cookie preferences</button></div><div><b>{business.city}</b><span>{runtime.settings.address || business.address}</span><span>{runtime.settings.opening_hours || business.hours}</span></div><p className="footer-note">Direct Telegram booking · No visitor login · Admin-managed content and pricing.</p></footer>;
+}
