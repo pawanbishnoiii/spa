@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdminApi } from "@/lib/admin-auth";
 import { decryptDetails } from "@/lib/enquiry-privacy";
+import {hasSupabase} from "@/lib/supabase/config";
+import {deleteSupabaseData,getSupabaseAdminData,saveSupabaseAdminData} from "@/lib/supabase/store";
 
 const settingKeys = [
   "price_calm_30",
@@ -59,6 +61,10 @@ const updateSchema = z.object({
 export async function GET() {
   const user = await requireAdminApi();
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (hasSupabase()) {
+    const data = await getSupabaseAdminData(decryptDetails);
+    return NextResponse.json({ user: { email: user.email, displayName: user.displayName }, ...data }, { headers: { "Cache-Control": "private, no-store" } });
+  }
   if (!env.DB)
     return NextResponse.json(
       { error: "Database unavailable" },
@@ -151,7 +157,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const user = await requireAdminApi();
   if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  if (!env.DB)
+  if (!env.DB && !hasSupabase())
     return NextResponse.json(
       { error: "Database unavailable" },
       { status: 503 },
@@ -187,17 +193,21 @@ export async function POST(request: Request) {
       { error: "Use a valid AdSense publisher ID such as ca-pub-…" },
       { status: 400 },
     );
+  if (hasSupabase()) {
+    await saveSupabaseAdminData(parsed.data.settings, parsed.data.therapists, user.email);
+    return NextResponse.json({ ok: true });
+  }
   const now = Math.floor(Date.now() / 1000);
   const statements: D1PreparedStatement[] = [];
   for (const [key, value] of Object.entries(parsed.data.settings ?? {}))
     statements.push(
-      env.DB.prepare(
+      env.DB!.prepare(
         "INSERT INTO site_settings (key,value,updated_at,updated_by) VALUES (?,?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at, updated_by=excluded.updated_by",
       ).bind(key, value, now, user.email),
     );
   for (const therapist of parsed.data.therapists ?? [])
     statements.push(
-      env.DB.prepare(
+      env.DB!.prepare(
         "INSERT INTO therapist_profiles (id,name_en,name_hi,speciality_en,speciality_hi,image_key,active,updated_at) VALUES (?,?,?,?,?,NULL,?,?) ON CONFLICT(id) DO UPDATE SET name_en=excluded.name_en,name_hi=excluded.name_hi,speciality_en=excluded.speciality_en,speciality_hi=excluded.speciality_hi,active=excluded.active,updated_at=excluded.updated_at",
       ).bind(
         therapist.id,
@@ -209,14 +219,14 @@ export async function POST(request: Request) {
         now,
       ),
     );
-  if (statements.length) await env.DB.batch(statements);
+  if (statements.length) await env.DB!.batch(statements);
   return NextResponse.json({ ok: true });
 }
 export async function DELETE(request: Request) {
   const user = await requireAdminApi();
   if (!user || request.headers.get("origin") !== new URL(request.url).origin)
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  if (!env.DB)
+  if (!env.DB && !hasSupabase())
     return NextResponse.json(
       { error: "Database unavailable" },
       { status: 503 },
@@ -225,16 +235,24 @@ export async function DELETE(request: Request) {
     scope?: string;
     id?: string;
   } | null;
+  if (hasSupabase()) {
+    try {
+      await deleteSupabaseData(body?.scope || "", body?.id);
+      return NextResponse.json({ ok: true });
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid history scope" }, { status: 400 });
+    }
+  }
   if (body?.scope === "enquiries")
-    await env.DB.prepare("DELETE FROM enquiries").run();
+    await env.DB!.prepare("DELETE FROM enquiries").run();
   else if (body?.scope === "sources")
-    await env.DB.prepare(
+    await env.DB!.prepare(
       "UPDATE analytics_sessions SET source='cleared',medium='none',campaign=NULL,referrer_host=NULL",
     ).run();
   else if (body?.scope === "analytics")
-    await env.DB.batch([
-      env.DB.prepare("DELETE FROM analytics_events"),
-      env.DB.prepare("DELETE FROM analytics_sessions"),
+    await env.DB!.batch([
+      env.DB!.prepare("DELETE FROM analytics_events"),
+      env.DB!.prepare("DELETE FROM analytics_sessions"),
     ]);
   else if (
     body?.scope === "profile" &&
@@ -242,20 +260,20 @@ export async function DELETE(request: Request) {
     /^t[1-6]$/.test(body.id)
   ) {
     const [profile, gallery] = await Promise.all([
-      env.DB.prepare("SELECT image_key FROM therapist_profiles WHERE id=?")
+      env.DB!.prepare("SELECT image_key FROM therapist_profiles WHERE id=?")
         .bind(body.id)
         .first<{ image_key: string | null }>(),
-      env.DB.prepare(
+      env.DB!.prepare(
         "SELECT image_key FROM therapist_photos WHERE therapist_id=?",
       )
         .bind(body.id)
         .all<{ image_key: string }>(),
     ]);
-    await env.DB.batch([
-      env.DB.prepare("DELETE FROM therapist_photos WHERE therapist_id=?").bind(
+    await env.DB!.batch([
+      env.DB!.prepare("DELETE FROM therapist_photos WHERE therapist_id=?").bind(
         body.id,
       ),
-      env.DB.prepare("DELETE FROM therapist_profiles WHERE id=?").bind(body.id),
+      env.DB!.prepare("DELETE FROM therapist_profiles WHERE id=?").bind(body.id),
     ]);
     const bucket = env.BUCKET;
     if (bucket)

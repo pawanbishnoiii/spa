@@ -1,7 +1,14 @@
-/**
- * Next/Vercel build shim. The live Sites worker supplies real D1/R2 bindings
- * through `cloudflare:workers`; a plain Node deployment receives no bindings.
- * Public pages still render from their safe defaults, while data APIs return a
- * clear 503 until equivalent persistent storage is connected.
- */
-export const env = {} as Cloudflare.Env;
+/** Next/Vercel shim for the Cloudflare runtime environment module. */
+export const env = {
+  ADMIN_EMAILS: process.env.ADMIN_EMAILS,
+  ADMIN_LOGIN_EMAIL: process.env.ADMIN_LOGIN_EMAIL,
+  ADMIN_PASSWORD_HASH: process.env.ADMIN_PASSWORD_HASH,
+  ADMIN_SESSION_SECRET: process.env.ADMIN_SESSION_SECRET,
+  ANALYTICS_SALT: process.env.ANALYTICS_SALT,
+  ENQUIRY_ENCRYPTION_KEY: process.env.ENQUIRY_ENCRYPTION_KEY,
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+} as Cloudflare.Env;

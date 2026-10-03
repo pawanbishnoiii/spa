@@ -2,6 +2,8 @@ import { env } from "cloudflare:workers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import {encryptDetails} from "@/lib/enquiry-privacy";
+import {hasSupabase} from "@/lib/supabase/config";
+import {getSupabaseEnquiryByIdempotency,insertSupabaseEnquiry,rateLimitSupabase} from "@/lib/supabase/store";
 
 const schema = z.object({
   firstName: z.string().trim().min(2).max(40),
@@ -25,20 +27,33 @@ export async function POST(request: Request) {
   try {
     const parsed = schema.safeParse(await request.json());
     if (!parsed.success) return NextResponse.json({ error: "Please review the highlighted details." }, { status: 400 });
-    const db = env.DB;
-    if (!db) return NextResponse.json({ error: "Enquiries are temporarily unavailable. Please call or use Telegram." }, { status: 503 });
+    const cloudflareDb = env.DB;
+    if (!cloudflareDb && !hasSupabase()) return NextResponse.json({ error: "Enquiries are temporarily unavailable. Please call or use Telegram." }, { status: 503 });
     const now = new Date(); const day = now.toISOString().slice(0, 10);
     const fingerprint = await digest(`${day}:${request.headers.get("cf-connecting-ip") ?? "local"}`);
-    const current = await db.prepare("SELECT count FROM enquiry_rate_limits WHERE fingerprint = ?").bind(fingerprint).first<{count:number}>();
-    if ((current?.count ?? 0) >= 5) return NextResponse.json({ error: "Too many enquiries today. Please call us instead." }, { status: 429 });
-    const existing = await db.prepare("SELECT reference FROM enquiries WHERE idempotency_key = ?").bind(parsed.data.idempotencyKey).first<{reference:string}>();
+    const current = hasSupabase() ? null : await cloudflareDb!.prepare("SELECT count FROM enquiry_rate_limits WHERE fingerprint = ?").bind(fingerprint).first<{count:number}>();
+    if (hasSupabase()) {
+      const dayStart=Math.floor(Date.parse(`${day}T00:00:00Z`)/1000);
+      if (!(await rateLimitSupabase(fingerprint, 5, dayStart))) return NextResponse.json({ error: "Too many enquiries today. Please call us instead." }, { status: 429 });
+    } else if ((current?.count ?? 0) >= 5) return NextResponse.json({ error: "Too many enquiries today. Please call us instead." }, { status: 429 });
+    const existing = hasSupabase()
+      ? await getSupabaseEnquiryByIdempotency(parsed.data.idempotencyKey)
+      : await cloudflareDb!.prepare("SELECT reference FROM enquiries WHERE idempotency_key = ?").bind(parsed.data.idempotencyKey).first<{reference:string}>();
     if (existing) return NextResponse.json({ reference: existing.reference });
     const reference = `ENQ-${day.replaceAll("-", "")}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
     const deletion = new Date(now.getTime() + 90 * 86400000);
     const encrypted=await encryptDetails({name:`${parsed.data.firstName} ${parsed.data.lastName}`,first_name:parsed.data.firstName,last_name:parsed.data.lastName,phone:parsed.data.phone||null,age:parsed.data.age,gender:parsed.data.gender,service:parsed.data.service,therapist_preference:parsed.data.therapist||null});
-    await db.batch([
-      db.prepare("INSERT INTO enquiries (id, reference, idempotency_key, encrypted_details, name, first_name, last_name, button_id, phone, gender, age, service, therapist_preference, marketing_consent, created_at, delete_after) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(crypto.randomUUID(), reference, parsed.data.idempotencyKey, encrypted, "[protected]", "", "", parsed.data.buttonId, null, "[protected]", 0, "[protected]", null, parsed.data.marketing ? 1 : 0, Math.floor(now.getTime()/1000), Math.floor(deletion.getTime()/1000)),
-      current ? db.prepare("UPDATE enquiry_rate_limits SET count = count + 1 WHERE fingerprint = ?").bind(fingerprint) : db.prepare("INSERT INTO enquiry_rate_limits (fingerprint, count, window_start) VALUES (?, 1, ?)").bind(fingerprint, Math.floor(now.getTime()/1000)),
+    if (hasSupabase()) await insertSupabaseEnquiry({
+      id: crypto.randomUUID(), reference, idempotency_key: parsed.data.idempotencyKey,
+      encrypted_details: encrypted, name: "[protected]", first_name: "", last_name: "",
+      button_id: parsed.data.buttonId, phone: null, gender: "[protected]", age: 0,
+      service: "[protected]", therapist_preference: null,
+      marketing_consent: parsed.data.marketing,
+      created_at: Math.floor(now.getTime()/1000), delete_after: Math.floor(deletion.getTime()/1000),
+    });
+    else await cloudflareDb!.batch([
+      cloudflareDb!.prepare("INSERT INTO enquiries (id, reference, idempotency_key, encrypted_details, name, first_name, last_name, button_id, phone, gender, age, service, therapist_preference, marketing_consent, created_at, delete_after) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(crypto.randomUUID(), reference, parsed.data.idempotencyKey, encrypted, "[protected]", "", "", parsed.data.buttonId, null, "[protected]", 0, "[protected]", null, parsed.data.marketing ? 1 : 0, Math.floor(now.getTime()/1000), Math.floor(deletion.getTime()/1000)),
+      current ? cloudflareDb!.prepare("UPDATE enquiry_rate_limits SET count = count + 1 WHERE fingerprint = ?").bind(fingerprint) : cloudflareDb!.prepare("INSERT INTO enquiry_rate_limits (fingerprint, count, window_start) VALUES (?, 1, ?)").bind(fingerprint, Math.floor(now.getTime()/1000)),
     ]);
     return NextResponse.json({ reference });
   } catch {

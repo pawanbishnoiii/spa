@@ -1,6 +1,8 @@
 import { env } from "cloudflare:workers";
 import { NextResponse } from "next/server";
 import { makeAdminSession, verifyPassword } from "@/lib/password-admin";
+import { hasSupabase } from "@/lib/supabase/config";
+import { rateLimitSupabase } from "@/lib/supabase/store";
 
 type LoginBody = { email?: string; password?: string };
 
@@ -12,7 +14,7 @@ export async function POST(request: Request) {
     !data ||
     typeof data.password !== "string" ||
     data.password.length > 200 ||
-    !env.DB
+    (!env.DB && !hasSupabase())
   )
     return NextResponse.json({ error: "Unable to sign in" }, { status: 400 });
   const now = Math.floor(Date.now() / 1000);
@@ -25,21 +27,19 @@ export async function POST(request: Request) {
   const id = [...new Uint8Array(digest)]
     .map((x) => x.toString(16).padStart(2, "0"))
     .join("");
-  const current = await env.DB.prepare(
-    "SELECT count FROM enquiry_rate_limits WHERE fingerprint = ?",
-  )
-    .bind(id)
-    .first<{ count: number }>();
-  if ((current?.count || 0) >= 10)
-    return NextResponse.json(
-      { error: "Try again in 15 minutes" },
-      { status: 429 },
-    );
-  await env.DB.prepare(
-    "INSERT INTO enquiry_rate_limits (fingerprint,count,window_start) VALUES (?,1,?) ON CONFLICT(fingerprint) DO UPDATE SET count=count+1",
-  )
-    .bind(id, now)
-    .run();
+  if (hasSupabase()) {
+    if (!(await rateLimitSupabase(id, 10, now - 900)))
+      return NextResponse.json({ error: "Try again in 15 minutes" }, { status: 429 });
+  } else {
+    const current = await env.DB!.prepare(
+      "SELECT count FROM enquiry_rate_limits WHERE fingerprint = ?",
+    ).bind(id).first<{ count: number }>();
+    if ((current?.count || 0) >= 10)
+      return NextResponse.json({ error: "Try again in 15 minutes" }, { status: 429 });
+    await env.DB!.prepare(
+      "INSERT INTO enquiry_rate_limits (fingerprint,count,window_start) VALUES (?,1,?) ON CONFLICT(fingerprint) DO UPDATE SET count=count+1",
+    ).bind(id, now).run();
+  }
   const config = env as unknown as Record<string, string>;
   if (
     data.email !== config.ADMIN_LOGIN_EMAIL ||

@@ -1,8 +1,11 @@
 import { env } from "cloudflare:workers";
 import {profilePhotos} from "@/lib/profile-media";
 import { NextResponse } from "next/server";
+import {hasSupabase} from "@/lib/supabase/config";
+import {getSupabasePublicConfig} from "@/lib/supabase/store";
 
 export async function GET() {
+  if (hasSupabase()) return NextResponse.json(await getSupabasePublicConfig(), { headers: { "cache-control": "public, max-age=30, stale-while-revalidate=120" } });
   if (!env.DB) return NextResponse.json({ settings: {}, therapists: [] });
   const [settingsResult, therapistsResult] = await Promise.all([
     env.DB.prepare("SELECT key, value FROM site_settings").all<{key:string;value:string}>(),
