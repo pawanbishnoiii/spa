@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import {
   ArrowUpRight,
@@ -74,6 +74,38 @@ function telegramHref(value: string) {
 }
 
 let collectUserDetails = true;
+function RouteAnchor({
+  href,
+  className,
+  children,
+}: {
+  href: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <a
+      href={href}
+      className={className}
+      onClick={(event) => {
+        if (
+          event.button !== 0 ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey
+        )
+          return;
+        event.preventDefault();
+        event.stopPropagation();
+        window.location.assign(event.currentTarget.href);
+      }}
+    >
+      {children}
+    </a>
+  );
+}
+
 function TelegramLink({
   href,
   label,
@@ -272,7 +304,7 @@ export default function SpaExperience({ route }: { route: string }) {
 
       <header className="nav-wrap">
         <nav className="nav" aria-label="Primary navigation">
-          <a className="brand" href="/en">
+          <RouteAnchor className="brand" href="/en">
             <span className="brand-mark">
               <Leaf />
             </span>
@@ -280,16 +312,16 @@ export default function SpaExperience({ route }: { route: string }) {
               <b>{siteName}</b>
               <small>PRIVATE WELLNESS</small>
             </span>
-          </a>
+          </RouteAnchor>
           <div className="nav-links">
             {content.nav.map((item, index) => (
-              <a
+              <RouteAnchor
                 key={item}
                 className={route === content.paths[index] ? "active" : ""}
                 href={to(content.paths[index])}
               >
                 {item}
-              </a>
+              </RouteAnchor>
             ))}
           </div>
         </nav>
@@ -1211,17 +1243,17 @@ function Footer({
       </div>
       <div>
         <b>Explore</b>
-        <a href={to("services")}>Treatments</a>
-        <a href={to("therapists")}>Therapists</a>
-        <a href={to("first-visit")}>First visit</a>
-        <a href={to("about")}>About</a>
-        <a href={to("contact")}>Contact</a>
+        <RouteAnchor href={to("services")}>Treatments</RouteAnchor>
+        <RouteAnchor href={to("therapists")}>Therapists</RouteAnchor>
+        <RouteAnchor href={to("first-visit")}>First visit</RouteAnchor>
+        <RouteAnchor href={to("about")}>About</RouteAnchor>
+        <RouteAnchor href={to("contact")}>Contact</RouteAnchor>
       </div>
       <div>
         <b>Policies</b>
-        <a href={to("privacy")}>Privacy</a>
-        <a href={to("terms")}>Terms</a>
-        <a href={to("refund")}>Cancellation & Refund</a>
+        <RouteAnchor href={to("privacy")}>Privacy</RouteAnchor>
+        <RouteAnchor href={to("terms")}>Terms</RouteAnchor>
+        <RouteAnchor href={to("refund")}>Cancellation & Refund</RouteAnchor>
         <button
           className="footer-cookie"
           onClick={() =>
