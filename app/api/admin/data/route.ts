@@ -5,7 +5,7 @@ import { requireAdminApi } from "@/lib/admin-auth";
 
 const settingKeys = [
   "price_calm_30","price_calm_60","price_calm_90","price_deep_60","price_deep_90","price_aroma_60","price_aroma_90",
-  "site_name","registration_fee","business_phone","telegram_username","telegram_cta_en","opening_hours","address","meta_pixel_id","adsense_client_id",
+  "package_hour_1","package_hour_2","package_hour_3","package_hour_4","package_full_day","package_full_night","image_calm","image_deep","image_aroma","city","hero_title","hero_intro","site_name","registration_fee","business_phone","telegram_username","telegram_cta_en","opening_hours","address","meta_pixel_id","adsense_client_id",
 ] as const;
 const updateSchema = z.object({
   settings: z.record(z.enum(settingKeys), z.string().trim().max(500)).optional(),
@@ -16,19 +16,23 @@ export async function GET() {
   const user = await requireAdminApi(); if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (!env.DB) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   const since = Math.floor(Date.now()/1000) - 30*86400;
-  const [settings, therapists, totals, sources, days, events] = await Promise.all([
+  const [settings, therapists, totals, sources, days, events, leads, sessions, buttons] = await Promise.all([
     env.DB.prepare("SELECT key, value FROM site_settings ORDER BY key").all<{key:string;value:string}>(),
     env.DB.prepare("SELECT id, name_en, name_hi, speciality_en, speciality_hi, image_key, active FROM therapist_profiles ORDER BY id").all<Record<string,string|number|null>>(),
     env.DB.prepare("SELECT COUNT(*) sessions, COUNT(DISTINCT visitor_hash) visitors, COALESCE(AVG(duration_seconds),0) avg_duration, COALESCE(SUM(page_count),0) page_views FROM analytics_sessions WHERE last_seen >= ?").bind(since).first(),
     env.DB.prepare("SELECT source, COUNT(*) sessions FROM analytics_sessions WHERE last_seen >= ? GROUP BY source ORDER BY sessions DESC LIMIT 8").bind(since).all(),
     env.DB.prepare("SELECT date(first_seen, 'unixepoch') day, COUNT(*) sessions, COUNT(DISTINCT visitor_hash) visitors FROM analytics_sessions WHERE first_seen >= ? GROUP BY day ORDER BY day").bind(since).all(),
     env.DB.prepare("SELECT event_name, COUNT(*) count FROM analytics_events WHERE occurred_at >= ? GROUP BY event_name ORDER BY count DESC").bind(since).all(),
+    env.DB.prepare("SELECT reference, first_name, last_name, name, age, gender, service, button_id, created_at FROM enquiries WHERE delete_after > ? ORDER BY created_at DESC LIMIT 200").bind(Math.floor(Date.now()/1000)).all(),
+    env.DB.prepare("SELECT id, visitor_hash, source, medium, campaign, device, country, landing_path, page_count, duration_seconds, first_seen, last_seen FROM analytics_sessions WHERE last_seen >= ? ORDER BY last_seen DESC LIMIT 200").bind(since).all(),
+    env.DB.prepare("SELECT COALESCE(json_extract(metadata, '$.buttonId'), 'legacy') button_id, COUNT(*) clicks, COUNT(DISTINCT session_id) users FROM analytics_events WHERE event_name = 'telegram_click' AND occurred_at >= ? GROUP BY button_id ORDER BY clicks DESC").bind(since).all(),
   ]);
   return NextResponse.json({
     user:{email:user.email,displayName:user.displayName},
     settings:Object.fromEntries((settings.results??[]).map((row)=>[row.key,row.value])),
     therapists:(therapists.results??[]).map((row)=>({...row,imageUrl:row.image_key?`/api/media/${row.image_key}`:null,image_key:undefined})),
-    analytics:{totals:totals??{},sources:sources.results??[],days:days.results??[],events:events.results??[]},
+    leads:leads.results??[],
+    analytics:{totals:totals??{},sources:sources.results??[],days:days.results??[],events:events.results??[],sessions:sessions.results??[],buttons:buttons.results??[]},
   }, { headers:{"Cache-Control":"private, no-store"} });
 }
 

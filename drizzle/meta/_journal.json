@@ -15,6 +15,13 @@
       "when": 1791008201107,
       "tag": "0001_gray_chronomancer",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791011541249,
+      "tag": "0002_early_captain_universe",
+      "breakpoints": true
     }
   ]
 }

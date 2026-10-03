@@ -9,6 +9,7 @@ const schema = z.object({
   utmSource: z.string().max(80).optional(), utmMedium: z.string().max(80).optional(),
   utmCampaign: z.string().max(120).optional(), referrer: z.string().max(500).optional(),
   serviceId: z.enum(["calm","deep","aroma"]).optional(), consentVersion: z.literal("2026-10"),
+  buttonId: z.string().max(80).optional(),
 });
 
 async function hash(value: string) {
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
       ON CONFLICT(id) DO UPDATE SET last_seen=excluded.last_seen, duration_seconds=MAX(duration_seconds, excluded.duration_seconds), page_count=page_count+?`)
       .bind(data.sessionId, visitorHash, now, now, duration, source, medium, data.utmCampaign ?? null, data.path, referrerHost, device, request.headers.get("cf-ipcountry"), data.consentVersion, pageIncrement),
     env.DB.prepare("INSERT INTO analytics_events (id, session_id, event_name, path, occurred_at, metadata) VALUES (?, ?, ?, ?, ?, ?)")
-      .bind(crypto.randomUUID(), data.sessionId, data.eventName, data.path, now, data.serviceId ? JSON.stringify({ serviceId: data.serviceId }) : null),
+      .bind(crypto.randomUUID(), data.sessionId, data.eventName, data.path, now, JSON.stringify({serviceId:data.serviceId,buttonId:data.buttonId})),
   ]);
   return NextResponse.json({ ok: true });
 }
