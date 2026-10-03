@@ -148,3 +148,11 @@ The portable build runs Vinext directly without a host `timeout` command. The ma
 
 - [vinext Documentation](https://github.com/cloudflare/vinext)
 - [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+
+## Spa admin and privacy-safe analytics
+
+- `/admin` uses Sign in with ChatGPT plus the server-side `ADMIN_EMAILS` allowlist. No application password is stored.
+- Admins can update service prices, contact details, hours, address, Meta Pixel ID, AdSense client ID, therapist copy, and therapist portraits.
+- Portrait uploads accept JPG, PNG, or WebP files up to 5 MB and are stored in R2.
+- Analytics starts only after visitor consent. It stores a daily salted visitor hash, coarse source/campaign/device/country data, page activity, time on site, and CTA events; raw IP addresses are never persisted.
+- Meta Pixel and AdSense load only after the visitor chooses “Allow all” and an admin has configured the relevant IDs.
