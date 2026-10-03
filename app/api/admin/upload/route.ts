@@ -6,7 +6,7 @@ export async function POST(request: Request) {
   const user = await requireAdminApi(); if (!user) return NextResponse.json({ error:"Forbidden" }, { status:403 });
   if (!env.DB || !env.BUCKET) return NextResponse.json({ error:"Media storage unavailable" }, { status:503 });
   const form = await request.formData(); const therapistId = form.get("therapistId"); const file = form.get("file");
-  if ((therapistId!=="t1"&&therapistId!=="t2") || !(file instanceof File)) return NextResponse.json({ error:"Invalid upload" }, { status:400 });
+  if ((typeof therapistId!=="string" || !/^t[1-6]$/.test(therapistId)) || !(file instanceof File)) return NextResponse.json({ error:"Invalid upload" }, { status:400 });
   if (!new Set(["image/jpeg","image/png","image/webp"]).has(file.type) || file.size>5_000_000) return NextResponse.json({ error:"Use JPG, PNG or WebP up to 5 MB" }, { status:400 });
   const extension = file.type.split("/")[1].replace("jpeg","jpg"); const key=`therapists/${therapistId}/${crypto.randomUUID()}.${extension}`;
   await env.BUCKET.put(key,file.stream(),{httpMetadata:{contentType:file.type,cacheControl:"public, max-age=31536000, immutable"}});

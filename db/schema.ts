@@ -8,6 +8,7 @@ export const enquiries = sqliteTable("enquiries", {
   firstName: text("first_name").notNull().default(""),
   lastName: text("last_name").notNull().default(""),
   buttonId: text("button_id").notNull().default("legacy"),
+  phone: text("phone"),
   gender: text("gender").notNull(),
   age: integer("age").notNull(),
   service: text("service").notNull(),

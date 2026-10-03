@@ -1,0 +1,9 @@
+import {env} from "cloudflare:workers";
+import {cookies} from "next/headers";
+const config=()=>env as unknown as Record<string,string>;
+const encoder=new TextEncoder();
+const hex=(bytes:ArrayBuffer)=>[...new Uint8Array(bytes)].map(x=>x.toString(16).padStart(2,"0")).join("");
+async function sessionKey(){return crypto.subtle.importKey("raw",encoder.encode(config().ADMIN_SESSION_SECRET||""),{name:"HMAC",hash:"SHA-256"},false,["sign","verify"])}
+export async function verifyPassword(password:string){try{const stored=JSON.parse(config().ADMIN_PASSWORD_HASH);const material=await crypto.subtle.importKey("raw",encoder.encode(password),"PBKDF2",false,["deriveBits"]);const result=hex(await crypto.subtle.deriveBits({name:"PBKDF2",salt:encoder.encode(stored.salt),iterations:100000,hash:"SHA-256"},material,256));let difference=0;for(let i=0;i<result.length;i++)difference|=result.charCodeAt(i)^stored.hash.charCodeAt(i);return difference===0}catch{return false}}
+export async function makeAdminSession(){const data=btoa(JSON.stringify({email:config().ADMIN_LOGIN_EMAIL,expires:Date.now()+8*3600000}));return `${data}.${hex(await crypto.subtle.sign("HMAC",await sessionKey(),encoder.encode(data)))}`}
+export async function getPasswordAdmin(){try{if(!config().ADMIN_SESSION_SECRET)return null;const token=(await cookies()).get("spa-admin")?.value;if(!token)return null;const [data,signature]=token.split(".");if(!signature||signature.length!==64)return null;const bytes=Uint8Array.from(signature.match(/.{2}/g)!,x=>parseInt(x,16));if(!await crypto.subtle.verify("HMAC",await sessionKey(),bytes,encoder.encode(data)))return null;const parsed=JSON.parse(atob(data));return parsed.expires>Date.now()&&parsed.email===config().ADMIN_LOGIN_EMAIL?{email:parsed.email,displayName:"Administrator"}:null}catch{return null}}

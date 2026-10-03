@@ -1,0 +1,2 @@
+import {NextResponse} from "next/server";
+export async function POST(request:Request){if(request.headers.get("origin")!==new URL(request.url).origin)return NextResponse.json({error:"Invalid request"},{status:403});const response=NextResponse.redirect(new URL("/admin",request.url),303);response.cookies.set("spa-admin","",{httpOnly:true,secure:true,sameSite:"strict",path:"/",maxAge:0});return response}

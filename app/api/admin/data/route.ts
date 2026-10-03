@@ -9,7 +9,7 @@ const settingKeys = [
 ] as const;
 const updateSchema = z.object({
   settings: z.record(z.enum(settingKeys), z.string().trim().max(500)).optional(),
-  therapists: z.array(z.object({id:z.enum(["t1","t2"]),nameEn:z.string().max(80),nameHi:z.string().max(80),specialityEn:z.string().max(200),specialityHi:z.string().max(200),active:z.boolean()})).max(2).optional(),
+  therapists: z.array(z.object({id:z.enum(["t1","t2","t3","t4","t5","t6"]),nameEn:z.string().max(80),nameHi:z.string().max(80),specialityEn:z.string().max(200),specialityHi:z.string().max(200),active:z.boolean()})).max(6).optional(),
 });
 
 export async function GET() {
@@ -23,7 +23,7 @@ export async function GET() {
     env.DB.prepare("SELECT source, COUNT(*) sessions FROM analytics_sessions WHERE last_seen >= ? GROUP BY source ORDER BY sessions DESC LIMIT 8").bind(since).all(),
     env.DB.prepare("SELECT date(first_seen, 'unixepoch') day, COUNT(*) sessions, COUNT(DISTINCT visitor_hash) visitors FROM analytics_sessions WHERE first_seen >= ? GROUP BY day ORDER BY day").bind(since).all(),
     env.DB.prepare("SELECT event_name, COUNT(*) count FROM analytics_events WHERE occurred_at >= ? GROUP BY event_name ORDER BY count DESC").bind(since).all(),
-    env.DB.prepare("SELECT reference, first_name, last_name, name, age, gender, service, button_id, created_at FROM enquiries WHERE delete_after > ? ORDER BY created_at DESC LIMIT 200").bind(Math.floor(Date.now()/1000)).all(),
+    env.DB.prepare("SELECT reference, first_name, last_name, name, phone, therapist_preference, age, gender, service, button_id, created_at FROM enquiries WHERE delete_after > ? ORDER BY created_at DESC LIMIT 200").bind(Math.floor(Date.now()/1000)).all(),
     env.DB.prepare("SELECT id, visitor_hash, source, medium, campaign, device, country, landing_path, page_count, duration_seconds, first_seen, last_seen FROM analytics_sessions WHERE last_seen >= ? ORDER BY last_seen DESC LIMIT 200").bind(since).all(),
     env.DB.prepare("SELECT COALESCE(json_extract(metadata, '$.buttonId'), 'legacy') button_id, COUNT(*) clicks, COUNT(DISTINCT session_id) users FROM analytics_events WHERE event_name = 'telegram_click' AND occurred_at >= ? GROUP BY button_id ORDER BY clicks DESC").bind(since).all(),
   ]);
@@ -39,6 +39,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const user = await requireAdminApi(); if (!user) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   if (!env.DB) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+  if(request.headers.get("origin")!==new URL(request.url).origin)return NextResponse.json({error:"Forbidden"},{status:403});
   const parsed = updateSchema.safeParse(await request.json().catch(()=>null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid update" }, { status: 400 });
   if ((parsed.data.settings?.telegram_cta_en?.length??0)>40) return NextResponse.json({ error:"Telegram button labels must be 40 characters or fewer" }, { status:400 });
@@ -48,4 +49,15 @@ export async function POST(request: Request) {
   for (const therapist of parsed.data.therapists??[]) statements.push(env.DB.prepare("INSERT INTO therapist_profiles (id,name_en,name_hi,speciality_en,speciality_hi,image_key,active,updated_at) VALUES (?,?,?,?,?,NULL,?,?) ON CONFLICT(id) DO UPDATE SET name_en=excluded.name_en,name_hi=excluded.name_hi,speciality_en=excluded.speciality_en,speciality_hi=excluded.speciality_hi,active=excluded.active,updated_at=excluded.updated_at").bind(therapist.id,therapist.nameEn,therapist.nameHi,therapist.specialityEn,therapist.specialityHi,therapist.active?1:0,now));
   if (statements.length) await env.DB.batch(statements);
   return NextResponse.json({ ok:true });
+}
+export async function DELETE(request:Request){
+ const user=await requireAdminApi();
+ if(!user||request.headers.get("origin")!==new URL(request.url).origin)return NextResponse.json({error:"Forbidden"},{status:403});
+ if(!env.DB)return NextResponse.json({error:"Database unavailable"},{status:503});
+ const body=await request.json().catch(()=>null);
+ if(body?.scope==="enquiries")await env.DB.prepare("DELETE FROM enquiries").run();
+ else if(body?.scope==="sources")await env.DB.prepare("UPDATE analytics_sessions SET source='cleared',medium='none',campaign=NULL,referrer_host=NULL").run();
+ else if(body?.scope==="analytics")await env.DB.batch([env.DB.prepare("DELETE FROM analytics_events"),env.DB.prepare("DELETE FROM analytics_sessions")]);
+ else return NextResponse.json({error:"Invalid history scope"},{status:400});
+ return NextResponse.json({ok:true});
 }

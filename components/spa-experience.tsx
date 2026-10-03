@@ -29,7 +29,7 @@ const content = {
   nav: ["Treatments", "Therapists", "First visit", "About"],
   paths: ["services", "therapists", "first-visit", "about"],
   eyebrow: "Professional wellness · thoughtfully personal",
-  title: "A quieter kind of luxury.",
+  title: "Relax. Reset. Feel like you.",
   intro: "Unhurried massage rituals, transparent pricing and respectful professional care—designed around how you want to feel.",
   telegram: "Chat on Telegram",
   illustrative: "Illustrative ambience · replace with real venue photography when available",
@@ -95,7 +95,7 @@ export default function SpaExperience({ route }: { route: string }) {
   const [style, setStyle] = useState(0);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [runtime, setRuntime] = useState<Runtime>({ settings: {}, therapists: [] });
-  const [lead,setLead]=useState<{href:string;label:string;service:string;buttonId:string}|null>(null);
+  const [lead,setLead]=useState<{href:string;label:string;service:string;buttonId:string;therapist?:string}|null>(null);
   const [floating,setFloating]=useState(false);
   useEffect(()=>{const open=(event:Event)=>setLead((event as CustomEvent).detail);window.addEventListener("open-spa-lead",open);const update=()=>{const hero=document.querySelector(".hero");const inHero=hero&&hero.getBoundingClientRect().bottom>100;const visible=[...document.querySelectorAll("[data-button]:not(.floating-telegram)")].some(el=>{const r=el.getBoundingClientRect();return r.height>0&&r.top<innerHeight&&r.bottom>0});setFloating(!inHero&&!visible)};window.addEventListener("scroll",update,{passive:true});update();return()=>{window.removeEventListener("open-spa-lead",open);window.removeEventListener("scroll",update)}},[]);
 
@@ -221,7 +221,7 @@ export default function SpaExperience({ route }: { route: string }) {
 
       <Footer siteName={siteName} to={to} runtime={runtime} telegramUrl={telegramUrl} telegramLabel={telegramLabel} />
       {floating&&!lead&&<TelegramLink href={telegramUrl} label={telegramLabel} className="floating-telegram" />}
-      {lead&&<LeadDialog lead={lead} close={()=>setLead(null)}/>}
+      {lead&&<LeadDialog lead={lead} therapists={displayTherapists(runtime)} close={()=>setLead(null)}/>}
     </div>
   );
 }
@@ -229,12 +229,7 @@ export default function SpaExperience({ route }: { route: string }) {
 function displayTherapists(runtime: Runtime) {
   return runtime.therapists?.length
     ? runtime.therapists
-    : therapists.map((therapist, index) => ({
-        id: therapist.id,
-        name_en: therapist.name,
-        speciality_en: therapist.en,
-        imageUrl: index===0?"/images/real-aroma.jpg":"/images/real-deep.jpg",
-      }));
+    : ["Relaxation care","Aroma care","Recovery care","Gentle care","Deep-pressure care","Personalised care"].map((name,index)=>({id:`t${index+1}`,name_en:name,speciality_en:"Discuss availability and your preferred treatment",imageUrl:["/images/portrait-1.jpg","/images/portrait-2.jpg","/images/portrait-3.jpg","/images/real-smile.jpg","/images/real-aroma.jpg","/images/real-deep.jpg"][index]}));
 }
 
 function Home({
@@ -262,8 +257,8 @@ function Home({
   return (
     <main>
       <section className="hero">
-        <Image src="/images/real-smile.jpg" alt="Smiling adult woman enjoying a spa visit with a towel wrap" fill priority sizes="100vw" />
-        <div className="hero-shade" />
+        <Image src="/images/hero-bed.jpg" alt="Smiling adult woman seated on a bed in a white spa robe" fill priority sizes="100vw" />
+        <div className="hero-shade" /><div className="hero-photo-caption"><Sparkles/><span>A little pause. A fresh start.</span></div>
         <div className="hero-orbit" aria-hidden="true"><LottieLight src="/breathe.json" autoplay={!reducedMotion} loop={!reducedMotion} /></div>
         <div className="hero-motes" aria-hidden="true"><i /><i /><i /></div>
         <div className="hero-copy reveal">
@@ -313,7 +308,7 @@ function Home({
 
       <section className="section team">
         <div className="section-head"><span className="kicker">03 · PROFESSIONAL TEAM</span><h2>{content.team}</h2></div>
-        <div className="team-grid">{team.map((therapist, index) => <article key={String(therapist.id)}><div className="portrait-photo"><Image src={String(therapist.imageUrl || (index===0?"/images/real-aroma.jpg":"/images/real-deep.jpg"))} alt="Professional therapist profile" fill sizes="(max-width:700px) 35vw,220px" /></div><div><h3>{String(therapist.name_en || "Therapist")}</h3><p>{String(therapist.speciality_en || "Professional massage care")}</p><small>Stock spa photograph · staff availability on request</small></div></article>)}</div>
+        <div className="team-grid">{team.map((therapist, index) => <article key={String(therapist.id)}><div className="portrait-photo"><Image src={String(therapist.imageUrl || (index===0?"/images/real-aroma.jpg":"/images/real-deep.jpg"))} alt="Professional therapist profile" fill sizes="(max-width:700px) 35vw,220px" /></div><div><h3>{String(therapist.name_en || "Therapist")}</h3><p>{String(therapist.speciality_en || "Professional massage care")}</p><small>Stock spa photograph · staff availability on request</small><button className="therapist-choice" onClick={()=>{if(!collectUserDetails){window.open(telegramUrl,"_blank","noopener");return}window.dispatchEvent(new CustomEvent("open-spa-lead",{detail:{href:telegramUrl,label:telegramLabel,service:"calm",buttonId:`therapist_${therapist.id}`,therapist:String(therapist.name_en)}}))}}>Request this preference <ArrowUpRight/></button></div></article>)}</div>
       </section>
 
       <TelegramBand href={telegramUrl} label={telegramLabel} />

@@ -5,6 +5,7 @@ import { z } from "zod";
 const schema = z.object({
   firstName: z.string().trim().min(2).max(40),
   lastName: z.string().trim().min(1).max(40),
+  phone: z.string().trim().max(20).regex(/^$|^[+\d ()-]{7,20}$/).optional(),
   buttonId: z.string().max(80),
   gender: z.enum(["female", "male", "nonbinary", "prefer-not"]),
   age: z.coerce.number().int().min(18).max(100),
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
     const reference = `ENQ-${day.replaceAll("-", "")}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
     const deletion = new Date(now.getTime() + 90 * 86400000);
     await db.batch([
-      db.prepare("INSERT INTO enquiries (id, reference, idempotency_key, name, first_name, last_name, button_id, gender, age, service, therapist_preference, marketing_consent, created_at, delete_after) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(crypto.randomUUID(), reference, parsed.data.idempotencyKey, `${parsed.data.firstName} ${parsed.data.lastName}`, parsed.data.firstName, parsed.data.lastName, parsed.data.buttonId, parsed.data.gender, parsed.data.age, parsed.data.service, parsed.data.therapist || null, parsed.data.marketing ? 1 : 0, Math.floor(now.getTime()/1000), Math.floor(deletion.getTime()/1000)),
+      db.prepare("INSERT INTO enquiries (id, reference, idempotency_key, name, first_name, last_name, button_id, phone, gender, age, service, therapist_preference, marketing_consent, created_at, delete_after) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(crypto.randomUUID(), reference, parsed.data.idempotencyKey, `${parsed.data.firstName} ${parsed.data.lastName}`, parsed.data.firstName, parsed.data.lastName, parsed.data.buttonId, parsed.data.phone || null, parsed.data.gender, parsed.data.age, parsed.data.service, parsed.data.therapist || null, parsed.data.marketing ? 1 : 0, Math.floor(now.getTime()/1000), Math.floor(deletion.getTime()/1000)),
       current ? db.prepare("UPDATE enquiry_rate_limits SET count = count + 1 WHERE fingerprint = ?").bind(fingerprint) : db.prepare("INSERT INTO enquiry_rate_limits (fingerprint, count, window_start) VALUES (?, 1, ?)").bind(fingerprint, Math.floor(now.getTime()/1000)),
     ]);
     return NextResponse.json({ reference });
