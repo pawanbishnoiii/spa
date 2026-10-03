@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import SpaExperience from "@/components/spa-experience";
 
 export default function RootPage() {
-  redirect("/hi");
+  return <SpaExperience lang="hi" route="home" />;
 }

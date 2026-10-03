@@ -29,7 +29,7 @@ export async function GET() {
     settings:Object.fromEntries((settings.results??[]).map((row)=>[row.key,row.value])),
     therapists:(therapists.results??[]).map((row)=>({...row,imageUrl:row.image_key?`/api/media/${row.image_key}`:null,image_key:undefined})),
     analytics:{totals:totals??{},sources:sources.results??[],days:days.results??[],events:events.results??[]},
-  });
+  }, { headers:{"Cache-Control":"private, no-store"} });
 }
 
 export async function POST(request: Request) {
