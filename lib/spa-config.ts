@@ -1,6 +1,6 @@
 export const business = {
   name: "Quiet Ritual Spa", city: "[CITY]", address: "[ADDRESS]", phone: "[PHONE]",
-  telegram: "[TELEGRAM_USERNAME]", hours: "[OPENING_HOURS]",
+  telegram: "SpaYakshini1", hours: "[OPENING_HOURS]",
   registrationFee: "[REGISTRATION_FEE]", registrationValidity: "[VALIDITY]", retentionDays: 90,
 } as const;
 
