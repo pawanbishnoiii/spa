@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import {
   ArrowUpRight,
@@ -136,6 +135,7 @@ export default function SpaExperience({ route }: { route: string }) {
     settings: {},
     therapists: [],
   });
+  const [configReady, setConfigReady] = useState(false);
   const [lead, setLead] = useState<{
     href: string;
     label: string;
@@ -170,7 +170,8 @@ export default function SpaExperience({ route }: { route: string }) {
     fetch("/api/public-config")
       .then((response) => response.json() as Promise<Runtime>)
       .then(setRuntime)
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => setConfigReady(true));
   }, []);
 
   useEffect(() => {
@@ -271,7 +272,7 @@ export default function SpaExperience({ route }: { route: string }) {
 
       <header className="nav-wrap">
         <nav className="nav" aria-label="Primary navigation">
-          <Link className="brand" href="/en">
+          <a className="brand" href="/en">
             <span className="brand-mark">
               <Leaf />
             </span>
@@ -279,86 +280,89 @@ export default function SpaExperience({ route }: { route: string }) {
               <b>{siteName}</b>
               <small>PRIVATE WELLNESS</small>
             </span>
-          </Link>
+          </a>
           <div className="nav-links">
             {content.nav.map((item, index) => (
-              <Link
+              <a
                 key={item}
                 className={route === content.paths[index] ? "active" : ""}
                 href={to(content.paths[index])}
               >
                 {item}
-              </Link>
+              </a>
             ))}
           </div>
         </nav>
       </header>
 
-      {(!knownRoute || route === "home") && (
-        <Home
-          duration={duration}
-          setDuration={setDuration}
-          style={style}
-          setStyle={setStyle}
-          filtered={filtered}
-          runtime={runtime}
-          telegramUrl={telegramUrl}
-          telegramLabel={telegramLabel}
-          reducedMotion={reducedMotion}
-        />
-      )}
-      {route === "services" && (
-        <Services
-          duration={duration}
-          setDuration={setDuration}
-          style={style}
-          setStyle={setStyle}
-          filtered={filtered}
-          runtime={runtime}
-          telegramUrl={telegramUrl}
-          telegramLabel={telegramLabel}
-        />
-      )}
-      {route === "therapists" && (
-        <Therapists
-          runtime={runtime}
-          telegramUrl={telegramUrl}
-          telegramLabel={telegramLabel}
-        />
-      )}
-      {route === "first-visit" && (
-        <FirstVisit
-          runtime={runtime}
-          telegramUrl={telegramUrl}
-          telegramLabel={telegramLabel}
-        />
-      )}
-      {route === "about" && (
-        <About telegramUrl={telegramUrl} telegramLabel={telegramLabel} />
-      )}
-      {route === "contact" && (
-        <TelegramContact
-          runtime={runtime}
-          telegramUrl={telegramUrl}
-          telegramLabel={telegramLabel}
-        />
-      )}
-      {["privacy", "terms", "refund"].includes(route) && (
-        <Policy kind={route} />
-      )}
-      {route === "privacy" && (
-        <section className="policy-disclosure">
-          <span>ANALYTICS & ADVERTISING</span>
-          <h2>No advertising tracking without your choice.</h2>
-          <p>
-            With consent, we record page visits, time on site, traffic source,
-            scroll milestones and generic actions such as Telegram clicks. Raw
-            IP addresses are never stored; a daily rotating hash is used. Form
-            details are never sent to advertising platforms. Meta Pixel and
-            Google AdSense load only after “Allow all”.
-          </p>
-        </section>
-      )}
+      <div className="route-stage" key={route}>
+        {(!knownRoute || route === "home") && (
+          <Home
+            duration={duration}
+            setDuration={setDuration}
+            style={style}
+            setStyle={setStyle}
+            filtered={filtered}
+            runtime={runtime}
+            telegramUrl={telegramUrl}
+            telegramLabel={telegramLabel}
+            reducedMotion={reducedMotion}
+            configReady={configReady}
+          />
+        )}
+        {route === "services" && (
+          <Services
+            duration={duration}
+            setDuration={setDuration}
+            style={style}
+            setStyle={setStyle}
+            filtered={filtered}
+            runtime={runtime}
+            telegramUrl={telegramUrl}
+            telegramLabel={telegramLabel}
+          />
+        )}
+        {route === "therapists" && (
+          <Therapists
+            runtime={runtime}
+            telegramUrl={telegramUrl}
+            telegramLabel={telegramLabel}
+          />
+        )}
+        {route === "first-visit" && (
+          <FirstVisit
+            runtime={runtime}
+            telegramUrl={telegramUrl}
+            telegramLabel={telegramLabel}
+          />
+        )}
+        {route === "about" && (
+          <About telegramUrl={telegramUrl} telegramLabel={telegramLabel} />
+        )}
+        {route === "contact" && (
+          <TelegramContact
+            runtime={runtime}
+            telegramUrl={telegramUrl}
+            telegramLabel={telegramLabel}
+          />
+        )}
+        {["privacy", "terms", "refund"].includes(route) && (
+          <Policy kind={route} />
+        )}
+        {route === "privacy" && (
+          <section className="policy-disclosure">
+            <span>ANALYTICS & ADVERTISING</span>
+            <h2>No advertising tracking without your choice.</h2>
+            <p>
+              With consent, we record page visits, time on site, traffic source,
+              scroll milestones and generic actions such as Telegram clicks. Raw
+              IP addresses are never stored; a daily rotating hash is used. Form
+              details are never sent to advertising platforms. Meta Pixel and
+              Google AdSense load only after “Allow all”.
+            </p>
+          </section>
+        )}
+      </div>
 
       <Footer siteName={siteName} to={to} runtime={runtime} />
       {floating && !lead && (
@@ -415,6 +419,7 @@ function Home({
   telegramUrl,
   telegramLabel,
   reducedMotion,
+  configReady,
 }: {
   duration: number;
   setDuration: (value: number) => void;
@@ -425,18 +430,29 @@ function Home({
   telegramUrl: string;
   telegramLabel: string;
   reducedMotion: boolean;
+  configReady: boolean;
 }) {
   const team = displayTherapists(runtime);
+  const heroImage = runtime.settings.hero_image || "/images/hero-bed.jpg";
+  const [heroReady, setHeroReady] = useState(false);
+
+  useEffect(() => setHeroReady(false), [heroImage]);
+
   return (
     <main>
-      <section className="hero">
-        <Image
-          src={runtime.settings.hero_image || "/images/hero-bed.jpg"}
-          alt="Adult woman relaxing in a professional spa setting"
-          fill
-          priority
-          sizes="100vw"
-        />
+      <section className={`hero ${heroReady ? "hero-image-ready" : ""}`}>
+        <div className="hero-media-placeholder" aria-hidden="true" />
+        {configReady && (
+          <Image
+            className="hero-media"
+            src={heroImage}
+            alt="Adult woman relaxing in a professional spa setting"
+            fill
+            priority
+            sizes="100vw"
+            onLoad={() => setHeroReady(true)}
+          />
+        )}
         <div className="hero-shade" />
         <div className="hero-photo-caption">
           <Sparkles />
@@ -1195,17 +1211,17 @@ function Footer({
       </div>
       <div>
         <b>Explore</b>
-        <Link href={to("services")}>Treatments</Link>
-        <Link href={to("therapists")}>Therapists</Link>
-        <Link href={to("first-visit")}>First visit</Link>
-        <Link href={to("about")}>About</Link>
-        <Link href={to("contact")}>Contact</Link>
+        <a href={to("services")}>Treatments</a>
+        <a href={to("therapists")}>Therapists</a>
+        <a href={to("first-visit")}>First visit</a>
+        <a href={to("about")}>About</a>
+        <a href={to("contact")}>Contact</a>
       </div>
       <div>
         <b>Policies</b>
-        <Link href={to("privacy")}>Privacy</Link>
-        <Link href={to("terms")}>Terms</Link>
-        <Link href={to("refund")}>Cancellation & Refund</Link>
+        <a href={to("privacy")}>Privacy</a>
+        <a href={to("terms")}>Terms</a>
+        <a href={to("refund")}>Cancellation & Refund</a>
         <button
           className="footer-cookie"
           onClick={() =>
