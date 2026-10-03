@@ -5,9 +5,9 @@ export const business = {
 } as const;
 
 export const services = [
-  { id: "calm", en: "Quiet Flow Massage", hi: "क्वायट फ्लो मसाज", moodEn: "Gentle relaxation", moodHi: "हल्का विश्राम", pressureEn: "Soft–medium", pressureHi: "हल्का–मध्यम", durations: [{m:30,p:"[PRICE_30]"},{m:60,p:"[PRICE_60]"},{m:90,p:"[PRICE_90]"}], image: "/images/hero-spa.png" },
-  { id: "deep", en: "Deep Release", hi: "डीप रिलीज़", moodEn: "Firmer pressure", moodHi: "गहरा दबाव", pressureEn: "Medium–firm", pressureHi: "मध्यम–गहरा", durations: [{m:60,p:"[PRICE_60]"},{m:90,p:"[PRICE_90]"}], image: "/images/spa-threshold.png" },
-  { id: "aroma", en: "Botanical Aroma Ritual", hi: "बॉटैनिकल अरोमा रिचुअल", moodEn: "Aromatic oils", moodHi: "सुगंधित तेल", pressureEn: "Soft", pressureHi: "हल्का", durations: [{m:60,p:"[PRICE_60]"},{m:90,p:"[PRICE_90]"}], image: "/images/ritual-oils.png" },
+  { id: "calm", en: "Quiet Flow Massage", hi: "क्वायट फ्लो मसाज", moodEn: "Gentle relaxation", moodHi: "हल्का विश्राम", pressureEn: "Soft–medium", pressureHi: "हल्का–मध्यम", durations: [{m:30,p:"[PRICE_30]"},{m:60,p:"[PRICE_60]"},{m:90,p:"[PRICE_90]"}], image: "/images/service-calm.webp" },
+  { id: "deep", en: "Deep Release", hi: "डीप रिलीज़", moodEn: "Firmer pressure", moodHi: "गहरा दबाव", pressureEn: "Medium–firm", pressureHi: "मध्यम–गहरा", durations: [{m:60,p:"[PRICE_60]"},{m:90,p:"[PRICE_90]"}], image: "/images/service-deep.webp" },
+  { id: "aroma", en: "Botanical Aroma Ritual", hi: "बॉटैनिकल अरोमा रिचुअल", moodEn: "Aromatic oils", moodHi: "सुगंधित तेल", pressureEn: "Soft", pressureHi: "हल्का", durations: [{m:60,p:"[PRICE_60]"},{m:90,p:"[PRICE_90]"}], image: "/images/service-aroma.webp" },
 ] as const;
 
 export const therapists = [
